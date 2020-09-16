@@ -113,6 +113,31 @@ InitGraphics (
   //
   // Hint: Use GetMode/SetMode functions.
   //
+  
+  // Set the size of the window
+  UINT32 MaxMode = GraphicsOutput->Mode->MaxMode;
+  UINT32 DesiredHeight = 768U;
+  UINT32 DesiredWidth  = 1024U;
+  UINT32 Mode          = 0;
+  for (; Mode < MaxMode; ++Mode) {
+    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *ModInfo;
+    UINTN ModInfoSize = 0;
+    Status = GraphicsOutput->QueryMode(GraphicsOutput, Mode, &ModInfoSize, &ModInfo);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "JOS: QueryMode call failed - %r\n", Status)); 
+    }
+    if (ModInfo->HorizontalResolution == DesiredWidth && ModInfo->VerticalResolution == DesiredHeight) {
+      break;
+    }
+  }
+  if (Mode == MaxMode) {
+    Mode = 0;
+  }
+  Status = GraphicsOutput->SetMode(GraphicsOutput, Mode);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "JOS: Cannot set graphics mode - %r\n", Status));
+    return Status;
+  }
 
   //
   // Fill screen with black.
@@ -135,8 +160,8 @@ InitGraphics (
   //
   LoaderParams->FrameBufferBase      = GraphicsOutput->Mode->FrameBufferBase;
   LoaderParams->FrameBufferSize      = GraphicsOutput->Mode->FrameBufferSize;
-  LoaderParams->HorizontalResolution = GraphicsOutput->Mode->Info->HorizontalResolution;
-  LoaderParams->VerticalResolution   = GraphicsOutput->Mode->Info->VerticalResolution;
+  LoaderParams->HorizontalResolution = GraphicsOutput->Mode->Info->HorizontalResolution;   // LAB1 CHECK!!!
+  LoaderParams->VerticalResolution   = GraphicsOutput->Mode->Info->VerticalResolution;   
 
   return EFI_SUCCESS;
 }
@@ -968,13 +993,13 @@ UefiMain (
   UINTN              EntryPoint;
   VOID               *GateData;
 
-#if 1 ///< Uncomment to await debugging
+#if 0 ///< Uncomment to await debugging
   volatile BOOLEAN   Connected;
   DEBUG ((DEBUG_INFO, "JOS: Awaiting debugger connection\n"));
 
-  Connected = FALSE;
+ Connected = FALSE;
   while (!Connected) {
-    ;
+   ;
   }
 #endif
 
