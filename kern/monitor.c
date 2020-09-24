@@ -24,7 +24,8 @@ static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"hello", "Display greeting message", mon_hello},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
-    {"backtrace", "Print stack backtrace", mon_backtrace}};
+    {"backtrace", "Print stack backtrace", mon_backtrace},
+    {"name", "Print developer name", mon_name}};
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -41,6 +42,22 @@ mon_help(int argc, char **argv, struct Trapframe *tf) {
 int
 mon_hello(int argc, char **argv, struct Trapframe *tf) {
   cprintf("Hello!\n");
+  return 0;
+}
+
+int
+mon_name(int argc, char **argv, struct Trapframe *tf) {
+  if (argc > 1) {
+    if (strcmp(argv[1], "-f") == 0) {
+      cprintf("Pavel\n");
+    } else if (strcmp(argv[1], "-l") == 0) {
+      cprintf("Seleznev\n");       
+    } else {
+      cprintf("Unknown option %s\n", argv[1]);
+    }
+  } else {
+    cprintf("Seleznev Pavel.\n");
+  }
   return 0;
 }
 
@@ -67,6 +84,23 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf) {
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
   // LAB 2: Your code here.
+  cprintf("Stack backtrace:\n");
+  
+  uint64_t *rbp = (uint64_t *)read_rbp();
+  uint64_t rip  = rbp[1];
+
+  struct Ripdebuginfo info;
+  
+  while (rbp != 0x0 && rip != 0x0) {
+    cprintf("  rbp %015lx rip %015lx\n", (uint64_t)rbp, rip);
+    debuginfo_rip(rip, &info);
+    
+    cprintf("       %s:%d ", info.rip_file, info.rip_line);
+    cprintf("%.*s+%lu\n", info.rip_fn_namelen, info.rip_fn_name, rip - info.rip_fn_addr);
+    rbp = (uint64_t*)rbp[0];
+    rip = rbp[1];
+  }
+  
   return 0;
 }
 

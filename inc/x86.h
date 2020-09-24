@@ -262,7 +262,7 @@ read_rbp(void) {
 static __inline uint64_t
 read_rsp(void) {
   uint64_t esp;
-  __asm __volatile("movl %%rsp,%0"
+  __asm __volatile("movq %%rsp,%0"
                    : "=r"(esp));
   return esp;
 }

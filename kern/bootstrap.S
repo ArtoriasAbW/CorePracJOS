@@ -23,7 +23,7 @@ _head64:
 
   # Build an early boot pml4 at pml4phys (physical = virtual for it).
 
-  # Initialize the page tables.
+  # Initialize the page tables.s
   movl $pml4,%edi
   xorl %eax,%eax
   movl $PML_SIZE,%ecx  # moving these many words to the 11 pages
