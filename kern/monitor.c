@@ -92,10 +92,10 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
   struct Ripdebuginfo info;
   
   while (rbp != 0x0 && rip != 0x0) {
-    cprintf("  rbp %015lx rip %015lx\n", (uint64_t)rbp, rip);
     debuginfo_rip(rip, &info);
+    cprintf("  rbp %016lx  rip %016lx\n", (uint64_t)rbp, rip);
     
-    cprintf("       %s:%d ", info.rip_file, info.rip_line);
+    cprintf("         %.256s:%d: ", info.rip_file, info.rip_line);
     cprintf("%.*s+%lu\n", info.rip_fn_namelen, info.rip_fn_name, rip - info.rip_fn_addr);
     rbp = (uint64_t*)rbp[0];
     rip = rbp[1];

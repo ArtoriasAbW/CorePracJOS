@@ -123,7 +123,7 @@ AsmWithOurGdt:
     ; 5. Update page table address register (C3) right away with the supplied PAGE_TABLE.
     ; This does nothing as paging is off at the moment as paging is disabled.
     ; LAB 2: Your code here:
-    mov eax, [REL PAGE_TABLE]
+    mov eax, [PAGE_TABLE]
     mov cr3, eax
     ; 6. Enable long mode (LME) and execute protection (NXE) via the EFER MSR register.
     ; LAB 2: Your code here:
@@ -136,6 +136,9 @@ AsmWithOurGdt:
     ; LAB 2: Your code here:
     mov eax, cr0
     bts eax, 31
+    bts eax, 18
+    bts eax, 16
+    bts eax, 1
     mov cr0, eax
 
     ; 8. Transition to 64-bit mode by updating CS with LINEAR_CODE64_SEL.
@@ -148,12 +151,12 @@ AsmInLongMode:
 
     ; 9. Reset all the data segment registers to linear 64-bit mode (LINEAR_DATA64_SEL).
     ; LAB 2: Your code here:
-    mov eax, LINEAR_DATA64_SEL
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov gs, ax
-    mov fs, ax
+    mov rax, LINEAR_DATA64_SEL
+    mov ds, eax
+    mov es, eax
+    mov ss, eax
+    mov gs, eax
+    mov fs, eax
     ; 10. Jump to the kernel code.
     mov ecx, [REL LOADER_PARAMS]
     mov ebx, [REL KERNEL_ENTRY]
