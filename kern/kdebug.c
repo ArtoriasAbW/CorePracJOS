@@ -75,8 +75,21 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
   // Hint: note that we need the address of `call` instruction, but rip holds
   // address of the next instruction, so we should substract 5 from it.
   // Hint: use line_for_address from kern/dwarf_lines.c
-  // LAB 2: Your code here:
+  // Your code here:
+  addr -= 5;
+  buf  = &info->rip_line;
+  code = line_for_address(&addrs, addr, line_offset, buf);
+  if (code < 0) {
+    return code;
+  }
 
+  buf  = &tmp_buf;
+  code = function_by_info(&addrs, addr, offset, buf, sizeof(char *), &info->rip_fn_addr);
+  strncpy(info->rip_fn_name, tmp_buf, 256);
+  info->rip_fn_namelen = strnlen(info->rip_fn_name, 256);
+  if (code < 0) {
+    return code;
+  }
   return 0;
 }
 
@@ -86,6 +99,31 @@ find_function(const char *const fname) {
   // address_by_fname, which looks for function name in section .debug_pubnames
   // and naive_address_by_fname which performs full traversal of DIE tree.
   // LAB 3: Your code here
+  struct {
+    const char *name;
+    uintptr_t addr;
+  } scentry[] = {
+    { "sys_yield", (uintptr_t)sys_yield },
+    { "sys_exit", (uintptr_t)sys_exit },
+  };
+
+  for (size_t i = 0; i < sizeof(scentry)/sizeof(*scentry); i++) {
+    if (!strcmp(scentry[i].name, fname)) {
+      return scentry[i].addr;
+    }
+  }
+
+  struct Dwarf_Addrs addrs;
+  load_kernel_dwarf_info(&addrs);
+  uintptr_t offset = 0;
+
+  if (!address_by_fname(&addrs, fname, &offset) && offset) {
+    return offset;
+  }
+
+  if (!naive_address_by_fname(&addrs, fname, &offset)) {
+    return offset;
+  }
 
   return 0;
 }
