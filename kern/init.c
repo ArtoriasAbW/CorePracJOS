@@ -98,10 +98,11 @@ i386_init(void) {
   env_init();
 
   irq_setmask_8259A(irq_mask_8259A & ~(1 << IRQ_CLOCK));
-  clock_idt_init();
+  clock_idt_init(); 
 
   pic_init();
   rtc_init();
+  irq_setmask_8259A(irq_mask_8259A & ~(1 << IRQ_CLOCK)); // маскируем IRQ_CLOCK
 
 #ifdef CONFIG_KSPACE
   // Touch all you want.
@@ -112,6 +113,8 @@ i386_init(void) {
 #endif
 
   // Schedule and run the first user environment!
+  uint8_t rtc_status = rtc_check_status(); // читаем RTC
+  pic_send_eoi(rtc_status); // отправляем сигнал на контроллер прерываний
   sched_yield();
 }
 

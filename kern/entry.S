@@ -72,6 +72,7 @@ _generall_syscall:
 .globl sys_yield
 .type  sys_yield, @function
 sys_yield:
+  cli # может здесь
   call _generall_syscall
   call csys_yield
   jmp .
@@ -80,7 +81,8 @@ sys_yield:
 .globl sys_exit
 .type  sys_exit, @function
 sys_exit:
-  leaq bootstacktop(%rip),%rsp 
+  cli # может здесь
+  leaq bootstacktop(%rip),%rsp  
   xor %ebp, %ebp 
   call csys_exit
 jmp .

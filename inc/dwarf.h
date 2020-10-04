@@ -430,9 +430,9 @@ dwarf_entry_len(const char *addr, unsigned long *len) {
 // of the DWARF 4 spec. Return the number of bytes read.
 static inline unsigned long
 dwarf_read_uleb128(const char *addr, unsigned int *ret) {
-  unsigned int result;
+  uint64_t result;
   unsigned char byte;
-  int shift, count;
+  uint64_t shift, count;
 
   result = 0;
   shift  = 0;
@@ -443,16 +443,16 @@ dwarf_read_uleb128(const char *addr, unsigned int *ret) {
     addr++;
     count++;
 
-    result |= (byte & 0x7f) << shift;
+    result |= (uint64_t)((uint64_t)(byte & 0x7f) << shift);
     shift += 7;
 
     if (!(byte & 0x80))
       break;
   }
 
-  *ret = result;
+  *ret = (unsigned int)result;
 
-  return count;
+  return (unsigned long)count;
 }
 
 // Decode signed LEB128 data. The Algorithm is taken from Appendix C
