@@ -127,14 +127,13 @@ void
 env_init(void) {
   // Set up envs array
   // LAB 3: Your code here.
-
-  env_free_list = NULL; // NULLing new env_list 
-  for (int i = NENV - 1; i >= 0; i--) { 
+  env_free_list = envs;
+  for (int i = 0; i < NENV - 1; ++i) { 
     // initialization in for loop every new environment till max env met
-    envs[i].env_link = env_free_list;
-    envs[i].env_id   = 0;
-    env_free_list    = &envs[i];
+      envs[i].env_link = &envs[i + 1];
   }
+  envs[NENV - 1].env_link = NULL;
+  env_init_percpu();
 }
 
 // Load GDT and segment descriptors.
@@ -323,20 +322,20 @@ load_icode(struct Env *e, uint8_t *binary) {
   // AHTUNG: из чего состоит Elf и Proghdr смотри в Elf64.h. Elf - это структура выполняемого фаила
   struct Elf *elf = (struct Elf *)binary; // binary приодится к типу указателя на структуру ELF
   if (elf->e_magic != ELF_MAGIC) {
-    cprintf("Unexpected ELF format\n");
+    cprintf("Not ELF object file!\n");
     return;
   }
 
 struct Proghdr *ph = (struct Proghdr *)(binary + elf->e_phoff); // Proghdr = prog header. Он лежит со смещением elf->e_phoff относительно начала фаила
+struct Proghdr *end = ph + elf->e_phnum;
+  for (; ph != end; ++ph) { //elf->e_phnum - Число заголовков программы. Если у файла нет таблицы заголовков программы, это поле содержит 0.
+    if (ph->p_type == ELF_PROG_LOAD) {
 
-  for (size_t i = 0; i < elf->e_phnum; i++) { //elf->e_phnum - Число заголовков программы. Если у файла нет таблицы заголовков программы, это поле содержит 0.
-    if (ph[i].p_type == ELF_PROG_LOAD) {
+      void *src = binary + ph->p_offset;
+      void *dst = (void *)ph->p_va;
 
-      void *src = binary + ph[i].p_offset;
-      void *dst = (void *)ph[i].p_va;
-
-      size_t memsz  = ph[i].p_memsz;
-      size_t filesz = MIN(ph[i].p_filesz, memsz);
+      size_t memsz  = ph->p_memsz;
+      size_t filesz = ph->p_filesz;
 
       memcpy(dst, src, filesz);                // копируем в dst (дистинейшн) src (код) размера filesz
       memset(dst + filesz, 0, memsz - filesz); // обнуление памяти по адресу dst + filesz, где количество нулей = memsz - filesz. Т.е. зануляем всю выделенную память сегмента кода, оставшуюяся после копирования src. Возможно, эта строка не нужна
@@ -345,8 +344,8 @@ struct Proghdr *ph = (struct Proghdr *)(binary + elf->e_phoff); // Proghdr = pro
     e->env_tf.tf_rip = elf->e_entry; //Виртуальный адрес точки входа, которому система передает управление при запуске процесса. в регистр rip записываем адрес точки входа для выполнения процесса
 
     bind_functions(e, binary); // Вызывается bind_functions, который связывает все что мы сделали выше (инициализация среды) с "кодом" самого процесса
-  };
-};
+  }
+}
 //
 // Allocates a new env with env_alloc, loads the named elf
 // binary into it with load_icode, and sets its env_type.
@@ -359,7 +358,7 @@ env_create(uint8_t *binary, enum EnvType type){
   // LAB 3: Your code here.
 
   struct Env *newenv; 
-  if (env_alloc(&newenv, 0) < 0) {
+  if (env_alloc(&newenv, 0) != 0) {
     panic("Can't allocate new environment");  // попытка выделить среду – если нет – вылет по панике ядра
   }
   
