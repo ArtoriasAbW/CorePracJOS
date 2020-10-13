@@ -222,6 +222,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id) {
   e->env_tf.tf_rflags = read_rflags();
 #else
 #endif
+
+  e->env_tf.tf_rflags |= FL_IF;
+
   // You will set e->env_tf.tf_rip later.
 
   // commit the allocation
