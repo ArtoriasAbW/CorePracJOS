@@ -3,11 +3,13 @@
 #include <inc/mmu.h>
 #include <inc/memlayout.h>
 
+
 .code64
 .text
 
 .globl entry
 entry:
+  cli
   # Save LoadParams in uefi_lp.
   movq %rcx, uefi_lp(%rip)
 
@@ -38,7 +40,7 @@ _generall_syscall:
   movq %rbp, rbp_reg(%rip)
   movq %rsp, rsp_reg(%rip)
   movq $0x0,%rbp
-  leaq bootstacktop(%rip),%rsp
+  leaq bootstacktop(%rip),%rsp // адрес bootstacktop в rip
   pushq $GD_KD
   pushq rsp_reg(%rip)
   pushfq
@@ -72,7 +74,6 @@ _generall_syscall:
 .globl sys_yield
 .type  sys_yield, @function
 sys_yield:
-  cli # может здесь
   call _generall_syscall
   call csys_yield
   jmp .
@@ -81,7 +82,7 @@ sys_yield:
 .globl sys_exit
 .type  sys_exit, @function
 sys_exit:
-  cli # может здесь
+  cli
   leaq bootstacktop(%rip),%rsp  
   xor %ebp, %ebp 
   call csys_exit
