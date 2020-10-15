@@ -271,7 +271,7 @@ bind_functions(struct Env *e, uint8_t *binary) {
           uintptr_t addr = find_function(name);
 
           if (addr) {
-            memcpy((void *)syms[j].st_value, &addr, sizeof(void *));
+            memcpy((void *)syms[j].st_value, &addr, sizeof(void *)); // undefined behavior
           }
         }
       }

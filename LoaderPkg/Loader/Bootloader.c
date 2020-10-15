@@ -290,7 +290,7 @@ GetKernelFile (
 
   Status = gBS->HandleProtocol (
     gImageHandle,
-    &gEfiLoadedImageProtocolGuid,
+    &gEfi edImageProtocolGuid,
     (VOID **) &LoadedImage
     );
   if (EFI_ERROR (Status)) {
