@@ -109,6 +109,7 @@ static void * acpi_find_table(const char * sign) {
   static RSDT * krsdt;
   static size_t krsdt_len;
   static size_t krsdt_entsz;
+  
  
   // uint8_t cksm = 0;
 
@@ -116,7 +117,7 @@ static void * acpi_find_table(const char * sign) {
     if (!uefi_lp->ACPIRoot) {
       panic("No rsdp\n");
     }
-    RSDP * krsdp = mmio_map_region(uefi_lp->ACPIRoot, sizeof(RSDP));
+    RSDP * krsdp = get_rsdp();
  
     uint64_t rsdt_pa = krsdp->RsdtAddress;
     krsdt_entsz = 4;
@@ -130,7 +131,7 @@ static void * acpi_find_table(const char * sign) {
     /* Remap since we can obtain table length only after mapping */
     krsdt = mmio_map_region(rsdt_pa, krsdt->h.Length);
 
-    krsdt_len = (krsdt->h.Length - sizeof(RSDT)) / 4;
+    krsdt_len = (krsdt->h.Length - sizeof(RSDT)) / 4; // количество записей в rsdt(xsdt)
     if (krsdp->Revision) {
       krsdt_len = krsdt_len / 2;
     }
