@@ -11,7 +11,7 @@
 
 extern char bootstacktop[], bootstack[];
 
-extern struct PageInfo *pages;
+extern struct PageInfo *pages; // структура для отслеживания того какие страницы физической памяти свободны(связный список физических страниц)
 extern size_t npages;
 
 extern pde_t *kern_pml4e;

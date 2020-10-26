@@ -150,9 +150,9 @@ i386_init(void) {
   ENV_CREATE_KERNEL_TYPE(prog_test1);
   ENV_CREATE_KERNEL_TYPE(prog_test2);
   ENV_CREATE_KERNEL_TYPE(prog_test3);
-  // ENV_CREATE_KERNEL_TYPE(prog_test4);
-  // ENV_CREATE_KERNEL_TYPE(prog_test5);
-  // ENV_CREATE_KERNEL_TYPE(prog_test6);
+  ENV_CREATE_KERNEL_TYPE(prog_test4);
+  ENV_CREATE_KERNEL_TYPE(prog_test5);
+  ENV_CREATE_KERNEL_TYPE(prog_test6);
 #endif
 
   // Schedule and run the first user environment!

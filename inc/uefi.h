@@ -20,7 +20,7 @@ typedef void VOID;
 typedef uint64_t EFI_PHYSICAL_ADDRESS;
 typedef uint64_t EFI_VIRTUAL_ADDRESS;
 
-typedef struct {
+typedef struct { // хранит информацию о всех регионах физической памяти
   ///
   /// Type of the memory region.
   /// Type EFI_MEMORY_TYPE is defined in the
@@ -52,7 +52,7 @@ typedef struct {
   /// memory region.
   ///
   UINT64 Attribute;
-} EFI_MEMORY_DESCRIPTOR;
+} EFI_MEMORY_DESCRIPTOR; 
 
 typedef struct {
   UINT16 Year;

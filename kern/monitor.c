@@ -33,11 +33,12 @@ static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"hello", "Display greeting message", mon_hello},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
-    {"backtrace", "Print stack backtrace", mon_backtrace},
+    {"pmap.hbacktrace", "Print stack backtrace", mon_backtrace},
     {"name", "Print developer name", mon_name},
     {"timer_start", "Start timer", mon_start},
     {"timer_stop", "Stop timer", mon_stop},
-    {"timer_freq", "Count processor frequency", mon_frequency}};
+    {"timer_freq", "Count processor frequency", mon_frequency},
+    {"pplist", "Display physical pages states", mon_pplist}};
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -135,6 +136,23 @@ int mon_frequency(int argc, char **argv, struct Trapframe *tf) {
     return 1;
   }
   timer_cpu_frequency(argv[1]);
+  return 0;
+}
+
+int mon_pplist(int argc, char **argv, struct Trapframe *tf) {
+  unsigned char is_prev_free = pages[0].pp_ref ? 0 : 1;
+  for (int i = 1; i <= npages; ++i) {
+    cprintf("%d", i);
+    if (i < npages && (pages[i].pp_ref ? 0 : 1) == is_prev_free) {
+      while(i < npages && (pages[i].pp_ref ? 0 : 1) == is_prev_free) {
+        is_prev_free = pages[i].pp_ref ? 0 : 1;
+        ++i;
+      }
+      cprintf("..%d", i);
+    }
+    cprintf(is_prev_free ? " FREE\n" : " ALLOCATED\n");
+    is_prev_free = (is_prev_free + 1) % 2;
+  }
   return 0;
 }
 

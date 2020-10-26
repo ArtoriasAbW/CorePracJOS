@@ -27,7 +27,7 @@ sched_yield(void) {
 
   // If no current environment,
   // start scanning from the beginning of array
-  int id   = curenv ? ENVX(curenv_getid()) : -1;
+  int id   = curenv ? ENVX(curenv_getid()) : 0; // ошибка в 3ей лабе дала о себе знать
   int orig = id;
 
   do {

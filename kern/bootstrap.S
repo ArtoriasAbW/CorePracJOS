@@ -78,14 +78,16 @@ _head64:
   cmp $0x0,%ecx
   jne 1b
 
-  # Update CR3 register.
+  # Update CR3 register.  
   movq $pml4,%rax
-  movq %rax, %cr3
+  movq %rax, %cr3 # теперь ссылки на память это виртуальные адреса
+  # pml4 в bootstrap.S транслирует виртуальные адреса в диапазоне от 0x8040000000 до 0x8080000000 в физические от 0x00000000 до 0x40000000,
+  # а также виртуальные адреса от 0x00000000 до 0x40000000 в физические от 0x00000000 до 0x40000000
 
   # Transition to high mem entry code and pass LoadParams address.
-  movabs $entry,%rax
+  movabs $entry, %rax
   movq %r12, %rcx
-  jmpq *%rax
+  jmpq *%rax # без  movq $pml4,%rax не работает (джамп на адрес 0x8041500000 не доступен)
 
 .data
 .p2align PGSHIFT

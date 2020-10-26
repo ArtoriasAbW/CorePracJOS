@@ -104,8 +104,10 @@ find_function(const char *const fname) {
     const char *name;
     uintptr_t addr;
   } scentry[] = {
+#ifdef JOS_PROG
     { "sys_yield", (uintptr_t)sys_yield },
     { "sys_exit", (uintptr_t)sys_exit },
+#endif
   };
 
   for (size_t i = 0; i < sizeof(scentry)/sizeof(*scentry); i++) {

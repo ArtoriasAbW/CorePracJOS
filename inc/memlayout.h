@@ -215,7 +215,7 @@ struct PageInfo {
   // Pages allocated at boot time using pmap.c's
   // boot_alloc do not have valid reference count fields.
 
-  uint16_t pp_ref;
+  uint16_t pp_ref; // счётчик ссылок
 };
 
 #endif /* !__ASSEMBLER__ */
