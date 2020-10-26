@@ -140,18 +140,18 @@ int mon_frequency(int argc, char **argv, struct Trapframe *tf) {
 }
 
 int mon_pplist(int argc, char **argv, struct Trapframe *tf) {
-  unsigned char is_prev_free = pages[0].pp_ref ? 0 : 1;
+  unsigned char is_prev_allocated = page_is_allocated(&pages[0]) ? 1 : 0;
   for (int i = 1; i <= npages; ++i) {
     cprintf("%d", i);
-    if (i < npages && (pages[i].pp_ref ? 0 : 1) == is_prev_free) {
-      while(i < npages && (pages[i].pp_ref ? 0 : 1) == is_prev_free) {
-        is_prev_free = pages[i].pp_ref ? 0 : 1;
+    if (i < npages && (page_is_allocated(&pages[i]) ? 1 : 0) == is_prev_allocated) {
+      while(i < npages && (page_is_allocated(&pages[i]) ? 1 : 0) == is_prev_allocated) {
+        is_prev_allocated = page_is_allocated(&pages[i]) ? 1 : 0;
         ++i;
       }
       cprintf("..%d", i);
     }
-    cprintf(is_prev_free ? " FREE\n" : " ALLOCATED\n");
-    is_prev_free = (is_prev_free + 1) % 2;
+    cprintf(is_prev_allocated ? " ALLOCATED\n" : " FREE\n");
+    is_prev_allocated = (is_prev_allocated + 1) % 2;
   }
   return 0;
 }
