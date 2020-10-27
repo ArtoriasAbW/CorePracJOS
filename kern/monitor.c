@@ -33,7 +33,7 @@ static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"hello", "Display greeting message", mon_hello},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
-    {"pmap.hbacktrace", "Print stack backtrace", mon_backtrace},
+    {"backtrace", "Print stack backtrace", mon_backtrace},
     {"name", "Print developer name", mon_name},
     {"timer_start", "Start timer", mon_start},
     {"timer_stop", "Stop timer", mon_stop},
