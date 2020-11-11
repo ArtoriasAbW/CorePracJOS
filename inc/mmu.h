@@ -137,6 +137,7 @@
 #define FL_VIP       0x00100000 // Virtual Interrupt Pending
 #define FL_ID        0x00200000 // ID flag
 
+
 // Page fault error codes
 #define FEC_PR 0x1 // Page fault caused by protection violation
 #define FEC_WR 0x2 // Page fault caused by a write
