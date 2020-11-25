@@ -470,6 +470,7 @@ page_init(void) {
       pages[i].pp_link = NULL;
     }
   }
+  // page_free_list_top = last; ???
 }
 
 //
@@ -886,6 +887,106 @@ check_page_alloc(void) {
   // check number of free pages
   for (pp = page_free_list, nfree = 0; pp; pp = pp->pp_link)
     ++nfree;
+
+  struct PageInfo *p;
+  // тест 1 (аллоцировать все)
+  // while (page_free_list) {
+  //   p = page_alloc(0);
+  // }
+  // assert(0);
+  // все верно
+
+//---------------------------------------------------------------------------------------------------------------------
+
+// тест 2 (выделить все страницы кроме одной)
+// for (int i = 0; i < nfree - 1; ++i) {
+//   p = page_alloc(0);
+// }
+// assert(0);
+
+
+//---------------------------------------------------------------------------------------------------------------------
+
+  // тест 3 (выделить все страницы кроме страницы с максимальным адресом)
+  // void *max_address = 0;
+  // void *address;
+  // struct PageInfo *max = 0;
+  // while (page_free_list) {
+  //   p = page_alloc(0);
+  //   address = page2kva(p);
+  //   if (address && (address > max_address)) {
+  //     max_address = address;
+  //     max = p;
+  //   }
+  // }
+  // page_free(max);
+  // cprintf("%p\n", max_address); //0x823ffff000
+  // assert(0);
+  // все верно
+
+
+//--------------------------------------------------------------------------------------------------------------------------
+
+  // тест 4 (выделить все страницы кроме страницы с минимальным адресом)
+  p = page_alloc(0);
+  struct PageInfo *min = 0;
+  void *address = page2kva(p);
+  void *min_address = address;
+  min = p;
+  while (page_free_list) {
+    p = page_alloc(0);
+    address = page2kva(p);
+    if (address && (address < min_address)) {
+      min_address = address;
+      min = p;
+    }
+  }
+  page_free(min);
+  cprintf("%p\n", min_address); // 0x8040001000
+  assert(0);
+  // почему-то 2 free, а не 1
+  
+//---------------------------------------------------------------------------------------------------------------------------------
+
+  // тест 5 (выделить все страницы кроме двух)
+  // for (int i = 0; i < nfree - 2; ++i) {
+  //   p = page_alloc(0);
+  // }
+  // assert(0);
+
+  //---------------------------------------------------------------------------------------------------------------------------------
+
+  //
+
+
+  //---------------------------------------------------------------------------------------------------------------------------------
+
+  // тест 7 (все кроме страницы с минимальным и страницы с масимальным адресом)
+  // p = page_alloc(0);
+  // struct PageInfo *min = 0;
+  // struct PageInfo *max = 0;
+  // void *address = page2kva(p);
+  // void *min_address = address;
+  // void *max_address = address;
+  // min = p;
+  // max = p;
+  // while (page_free_list) {
+  //   p = page_alloc(0);
+  //   address = page2kva(p);
+  //   if (address && (address < min_address)) {
+  //     min_address = address;
+  //     min = p;
+  //   }
+  //   if (address && (address > max_address)) {
+  //     max_address = address;
+  //     max = p;
+  //   }
+  // }
+  // page_free(min);
+  // page_free(max);
+  // assert(0);
+
+//-----------------------------------------------------------------------------------------------------------------
 
   // should be able to allocate three pages
   pp0 = pp1 = pp2 = 0;
