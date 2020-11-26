@@ -73,6 +73,9 @@ void tlb_invalidate(pml4e_t *pml4e, void *va);
 
 void *mmio_map_region(physaddr_t pa, size_t size);
 
+
+void *mmio_remap_last_region(physaddr_t pa, void *addr, size_t oldsize, size_t newsize);
+
 static inline physaddr_t
 page2pa(struct PageInfo *pp) {
   return (pp - pages) << PGSHIFT;

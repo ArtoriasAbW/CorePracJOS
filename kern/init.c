@@ -17,7 +17,6 @@
 #include <kern/cpu.h>
 #include <kern/picirq.h>
 #include <kern/kclock.h>
-#include <kern/kdebug.h>
 
 void
 timers_init(void) {
@@ -99,7 +98,6 @@ early_boot_pml4_init(void) {
 #ifdef SANITIZE_SHADOW_BASE
   map_addr_early_boot(SANITIZE_SHADOW_BASE, SANITIZE_SHADOW_BASE - KERNBASE, SANITIZE_SHADOW_SIZE);
 #endif
-
 #if LAB <= 6
   map_addr_early_boot(FBUFFBASE, uefi_lp->FrameBufferBase, uefi_lp->FrameBufferSize);
 #endif
@@ -108,7 +106,6 @@ early_boot_pml4_init(void) {
 void
 i386_init(void) {
   extern char end[];
-
   early_boot_pml4_init();
 
   // Initialize the console.
@@ -134,7 +131,8 @@ i386_init(void) {
     (*ctor)();
     ctor++;
   }
-
+  pic_init();
+  rtc_init();
 #ifdef SANITIZE_SHADOW_BASE
   kasan_mem_init();
 #endif
@@ -163,8 +161,7 @@ i386_init(void) {
 #endif
 
   // Schedule and run the first user environment!
-  uint8_t rtc_status = rtc_check_status(); // читаем RTC
-  pic_send_eoi(rtc_status); // отправляем сигнал на контроллер прерываний
+
   sched_yield();
 }
 
