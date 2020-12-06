@@ -56,7 +56,12 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
 
   struct Dwarf_Addrs addrs;
   if (addr <= ULIM) {
-    panic("Can't search for user-level addresses yet!");
+    // LAB 8 code
+    uint64_t tmp_cr3 = rcr3();
+    lcr3(PADDR(kern_pml4e));
+    load_kernel_dwarf_info(&addrs);
+    lcr3(tmp_cr3);
+    // LAB 8 end
   } else {
     load_kernel_dwarf_info(&addrs);
   }

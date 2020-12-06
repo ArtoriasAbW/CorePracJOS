@@ -70,7 +70,46 @@ void
 trap_init(void) {
   // extern struct Segdesc gdt[];
   // LAB 8: Your code here.
+  extern void (*devide_thdlr)(void);
+  extern void (*debug_thdlr)(void);
+  extern void (*nmi_thdlr)(void);
+  extern void (*brkpt_thdlr)(void);
+  extern void (*oflow_thdlr)(void);
+  extern void (*bound_thdlr)(void);
+  extern void (*illop_thdlr)(void);
+  extern void (*device_thdlr)(void);
+  extern void (*dblflt_thdlr)(void);
+  extern void (*tss_thdlr)(void);
+  extern void (*segnp_thdlr)(void);
+  extern void (*stack_thdlr)(void);
+  extern void (*gpflt_thdlr)(void);
+  extern void (*pgflt_thdlr)(void);
+  extern void (*fperr_thdlr)(void);
+  extern void (*align_thdlr)(void);
+  extern void (*mchk_thdlr)(void);
+  extern void (*simderr_thdlr)(void);
+  extern void (*syscall_thdlr)(void);
 
+
+  SETGATE(idt[T_DIVIDE], 0, GD_KT, (uint64_t) &devide_thdlr, 0);
+	SETGATE(idt[T_DEBUG], 0, GD_KT, (uint64_t) &debug_thdlr, 0);
+	SETGATE(idt[T_NMI], 0, GD_KT, (uint64_t) &nmi_thdlr, 0);
+	SETGATE(idt[T_BRKPT], 0, GD_KT, (uint64_t) &brkpt_thdlr, 3);
+	SETGATE(idt[T_OFLOW], 0, GD_KT, (uint64_t) &oflow_thdlr, 0);
+	SETGATE(idt[T_BOUND], 0, GD_KT, (uint64_t) &bound_thdlr, 0);
+	SETGATE(idt[T_ILLOP], 0, GD_KT, (uint64_t) &illop_thdlr, 0);
+	SETGATE(idt[T_DEVICE], 0, GD_KT, (uint64_t) &device_thdlr, 0);
+  SETGATE(idt[T_DBLFLT], 0, GD_KT, (uint64_t) &dblflt_thdlr, 0);
+	SETGATE(idt[T_TSS], 0, GD_KT, (uint64_t) &tss_thdlr, 0);
+	SETGATE(idt[T_SEGNP], 0, GD_KT, (uint64_t) &segnp_thdlr, 0);
+	SETGATE(idt[T_STACK], 0, GD_KT, (uint64_t) &stack_thdlr, 0);
+	SETGATE(idt[T_GPFLT], 0, GD_KT, (uint64_t) &gpflt_thdlr, 0);
+	SETGATE(idt[T_PGFLT], 0, GD_KT, (uint64_t) &pgflt_thdlr, 0);
+	SETGATE(idt[T_FPERR], 0, GD_KT, (uint64_t) &fperr_thdlr, 0);
+  SETGATE(idt[T_ALIGN], 0, GD_KT, (uint64_t) &align_thdlr, 0);
+	SETGATE(idt[T_MCHK], 0, GD_KT, (uint64_t) &mchk_thdlr, 0);
+	SETGATE(idt[T_SIMDERR], 0, GD_KT, (uint64_t) &simderr_thdlr, 0);
+  SETGATE(idt[T_SYSCALL], 0, GD_KT, (uint64_t) &syscall_thdlr, 3);
   // Per-CPU setup
   trap_init_percpu();
 }
@@ -269,6 +308,19 @@ page_fault_handler(struct Trapframe *tf) {
   // Handle kernel-mode page faults.
 
   // LAB 8: Your code here.
+
+   if (!(tf->tf_cs & 3)) {
+		panic("page fault in kernel!");
+	}
+
+	// We've already handled kernel-mode exceptions, so if we get here,
+	// the page fault happened in user mode.
+
+	// Destroy the environment that caused the fault.
+	cprintf(".%08x. user fault va %08lx ip %08lx\n",
+		curenv->env_id, fault_va, tf->tf_rip);
+	print_trapframe(tf);
+	env_destroy(curenv);
 
 
 }

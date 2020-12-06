@@ -508,6 +508,7 @@ env_create(uint8_t *binary, enum EnvType type){
   }
   
   newenv->env_type = type;
+  newenv->binary = binary;
 
   load_icode(newenv, binary); // load instruction code
 }

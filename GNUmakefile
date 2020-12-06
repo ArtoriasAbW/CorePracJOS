@@ -62,7 +62,7 @@ OBJCOPY	:= llvm/gnu-objcopy
 OBJDUMP	:= llvm-objdump
 NM	:= llvm-nm
 
-EXTRA_CFLAGS	:= $(EXTRA_CFLAGS) -Wno-self-assign -Wno-format-nonliteral -Wno-address-of-packed-member -Wno-frame-address
+EXTRA_CFLAGS	:= $(EXTRA_CFLAGS) -Wno-self-assign -Wno-format-nonliteral -Wno-address-of-packed-member
 
 GCC_LIB := $(shell $(CC) $(CFLAGS) -print-resource-dir)/lib/jetos/libclang_rt.builtins-x86_64.a
 
@@ -145,13 +145,12 @@ else
 CFLAGS += -O1
 endif
 CFLAGS += -ffreestanding -fno-omit-frame-pointer -mno-red-zone
-CFLAGS += -Wall -Wformat=2 -Wno-unused-function -Werror -g -gpubnames
+CFLAGS += -Wall -Wformat=2 -Wno-unused-function -Wno-address-of-packed-member -Werror -g -gpubnames 
 
 # Add -fno-stack-protector if the option exists.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 CFLAGS += -DUPAGES_SIZE=$(UPAGES_SIZE)  -DFBUFF_SIZE=$(FBUFF_SIZE)
 CFLAGS += $(EXTRA_CFLAGS)
-CFLAGS += -mno-sse -mno-sse2 -mno-mmx
 
 
 KERN_SAN_CFLAGS :=
@@ -254,10 +253,10 @@ CFLAGS += -DGRADE3_PFX2=$(GRADE3_PFX2)
 endif
 
 # Common linker flags
-LDFLAGS := -m elf_x86_64 -z max-page-size=0x1000 --print-gc-sections --warn-common
+LDFLAGS := -m elf_x86_64 -z max-page-size=0x1000 --print-gc-sections
 
 # Linker flags for JOS programs
-ULDFLAGS := -T user/user.ld --warn-common
+ULDFLAGS := -T user/user.ld
 
 # Lists that the */Makefrag makefile fragments will add to
 OBJDIRS :=
