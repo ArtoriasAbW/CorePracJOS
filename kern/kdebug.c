@@ -28,6 +28,42 @@ load_kernel_dwarf_info(struct Dwarf_Addrs *addrs) {
   addrs->pubtypes_end   = (unsigned char *)(uefi_lp->DebugPubtypesEnd);
 }
 
+
+void
+load_user_dwarf_info(struct Dwarf_Addrs *addrs) {
+  assert(curenv);
+  uint8_t *binary = curenv->binary;
+
+  struct Elf *elf = (struct Elf *)binary;
+  struct Secthdr *sh = (struct Secthdr *)(binary + elf->e_shoff);
+  const char *shstr = (char *)binary + sh[elf->e_shstrndx].sh_offset;
+
+  struct {
+    const uint8_t **end;
+    const uint8_t **start;
+    const char *name;
+  } p[] = {
+    {&addrs->aranges_end, &addrs->abbrev_begin, ".debuf_aranges"},
+    {&addrs->abbrev_end, &addrs->abbrev_begin, ".debug_abbrev"},
+    {&addrs->info_end, &addrs->info_begin, ".debug_info"},
+    {&addrs->line_end, &addrs->line_begin, ".debug_line"},
+    {&addrs->str_end, &addrs->str_begin, ".debug_str"},
+    {&addrs->pubnames_end, &addrs->pubnames_begin, ".debug_pubnames"},
+    {&addrs->pubtypes_end, &addrs->pubtypes_begin, ".debug_pubtypes"},
+  };
+
+  memset(addrs, 0, sizeof(*addrs));
+
+  for (size_t i = 0; i < elf->e_shnum; ++i) {
+    for (size_t k = 0; k < sizeof(p) / sizeof(*p); ++k) {
+      if (!strcmp(&shstr[sh[i].sh_name], p[k].name)) {
+        *p[k].start = binary + sh[i].sh_offset;
+        *p[k].end = *p[k].start + sh[i].sh_size;
+      }
+    }
+  }
+}
+
 // debuginfo_rip(addr, info)
 //
 //	Fill in the 'info' structure with information about the specified
@@ -37,6 +73,11 @@ load_kernel_dwarf_info(struct Dwarf_Addrs *addrs) {
 //
 int
 debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
+
+  if (!addr) {
+    return 0;
+  }
+
   int code = 0;
   // Initialize *info
   strcpy(info->rip_file, "<unknown>");
@@ -46,21 +87,19 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
   info->rip_fn_addr    = addr;
   info->rip_fn_narg    = 0;
 
-  if (!addr) {
-    return 0;
-  }
   
   // Temporarily load kernel cr3 and return back once done.
   // Make sure that you fully understand why it is necessary.
   // LAB 8: Your code here.
+  uintptr_t cr3 = rcr3();
+  if (cr3 != kern_cr3) {
+    lcr3(kern_cr3);
+  }
 
   struct Dwarf_Addrs addrs;
-  if (addr <= ULIM) {
+  if (addr < ULIM) {
     // LAB 8 code
-    uint64_t tmp_cr3 = rcr3();
-    lcr3(PADDR(kern_pml4e));
-    load_kernel_dwarf_info(&addrs);
-    lcr3(tmp_cr3);
+    load_user_dwarf_info(&addrs);
     // LAB 8 end
   } else {
     load_kernel_dwarf_info(&addrs);
@@ -71,7 +110,7 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
   Dwarf_Off offset = 0, line_offset = 0;
   code = info_by_address(&addrs, addr, &offset);
   if (code < 0) {
-    return code;
+    goto error;
   }
   char *tmp_buf;
   void *buf;
@@ -79,7 +118,7 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
   code = file_name_by_info(&addrs, offset, buf, sizeof(char *), &line_offset);
   strncpy(info->rip_file, tmp_buf, 256);
   if (code < 0) {
-    return code;
+    goto error;
   }
   // Find line number corresponding to given address.
   // Hint: note that we need the address of `call` instruction, but rip holds
@@ -90,17 +129,18 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
   buf  = &info->rip_line;
   code = line_for_address(&addrs, addr, line_offset, buf);
   if (code < 0) {
-    return code;
+    goto error;
   }
 
   buf  = &tmp_buf;
   code = function_by_info(&addrs, addr, offset, buf, sizeof(char *), &info->rip_fn_addr);
   strncpy(info->rip_fn_name, tmp_buf, 256);
   info->rip_fn_namelen = strnlen(info->rip_fn_name, 256);
-  if (code < 0) {
-    return code;
+error:
+  if (cr3 != kern_cr3) {
+    lcr3(cr3);
   }
-  return 0;
+  return code;
 }
 
 uintptr_t

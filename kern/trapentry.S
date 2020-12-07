@@ -65,7 +65,7 @@ _alltraps:
   movq %rax,%ds
   movq %rax,%es
   movq %rsp,%rdi
-  mov $0, %rbp
+  movq $0, %rbp
   call trap
   jmp .
 

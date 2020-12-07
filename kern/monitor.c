@@ -99,20 +99,26 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
   // LAB 2: Your code here.
   cprintf("Stack backtrace:\n");
-  
-  uint64_t *rbp = (uint64_t *)read_rbp();
-  uint64_t rip  = rbp[1];
+  uintptr_t cr3 = rcr3();
+  uint64_t *rbp = (uint64_t *)(tf ? tf->tf_regs.reg_rbp : read_rbp());
+  uint64_t rip;
 
   struct Ripdebuginfo info;
   
-  while (rbp != 0x0 && rip != 0x0) {
+  while (rbp) {
+    pte_t *pte1 = pml4e_walk(KADDR(cr3), rbp, 0);
+    pte_t *pte2 = pml4e_walk(KADDR(cr3), rbp + 1, 0);
+    if (!pte1 || !pte2 || !(*pte1 & PTE_P) || !(*pte2 & PTE_P)) {
+      cprintf("<Unreadable memory\n");
+      return 1;
+    }
+    rip = rbp[1];
     debuginfo_rip(rip, &info);
     cprintf("  rbp %016lx  rip %016lx\n", (uint64_t)rbp, rip);
     
     cprintf("         %.256s:%d: ", info.rip_file, info.rip_line);
     cprintf("%.*s+%lu\n", info.rip_fn_namelen, info.rip_fn_name, rip - info.rip_fn_addr);
     rbp = (uint64_t*)rbp[0];
-    rip = rbp[1];
   }
   
   return 0;
