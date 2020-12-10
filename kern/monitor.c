@@ -5,12 +5,12 @@
 #include <inc/string.h>
 #include <inc/memlayout.h>
 #include <inc/assert.h>
-#include <inc/env.h>
 #include <inc/x86.h>
 
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
+
 #include <kern/tsc.h>
 #include <kern/timer.h>
 #include <kern/env.h>
@@ -34,12 +34,22 @@ static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"hello", "Display greeting message", mon_hello},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
-    {"backtrace", "Print stack backtrace", mon_backtrace},
-    {"name", "Print developer name", mon_name},
+
+    // DELETED in LAB 5
+    // {"mycommand", "Display output for my command", mon_mycommand},
+    // DELETED in LAB 5 end
+
+    // LAB 5 code
     {"timer_start", "Start timer", mon_start},
     {"timer_stop", "Stop timer", mon_stop},
     {"timer_freq", "Count processor frequency", mon_frequency},
-    {"pplist", "Display physical pages states", mon_pplist}};
+    // LAB 5 code end
+
+    // LAB 6 code
+    {"memory", "Print list of all physical memory pages", mon_memory},
+    // LAB 6 code end
+
+    {"backtrace", "Print stack backtrace", mon_backtrace}};
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -56,22 +66,6 @@ mon_help(int argc, char **argv, struct Trapframe *tf) {
 int
 mon_hello(int argc, char **argv, struct Trapframe *tf) {
   cprintf("Hello!\n");
-  return 0;
-}
-
-int
-mon_name(int argc, char **argv, struct Trapframe *tf) {
-  if (argc > 1) {
-    if (strcmp(argv[1], "-f") == 0) {
-      cprintf("Pavel\n");
-    } else if (strcmp(argv[1], "-l") == 0) {
-      cprintf("Seleznev\n");       
-    } else {
-      cprintf("Unknown option %s\n", argv[1]);
-    }
-  } else {
-    cprintf("Seleznev Pavel.\n");
-  }
   return 0;
 }
 
@@ -95,73 +89,145 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf) {
   return 0;
 }
 
+// DELETED in LAB 5
+// LAB 2 code
+// int
+// mon_mycommand(int argc, char **argv, struct Trapframe *tf) {
+  // cprintf("This is output for my command.\n");
+  // return 0;
+// }
+// LAB 2 code end
+// DELETED in LAB 5 end
+
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
-  // LAB 2: Your code here.
+  // LAB 2 code
+  
   cprintf("Stack backtrace:\n");
-  uintptr_t cr3 = rcr3();
-  uint64_t *rbp = (uint64_t *)(tf ? tf->tf_regs.reg_rbp : read_rbp());
+  uint64_t rbp = read_rbp();
+  uintptr_t * pointer = (uintptr_t *)rbp;
   uint64_t rip;
-
+  uint64_t buf;
+  int digits_16;
+  int code;
   struct Ripdebuginfo info;
-  
-  while (rbp) {
-    pte_t *pte1 = pml4e_walk(KADDR(cr3), rbp, 0);
-    pte_t *pte2 = pml4e_walk(KADDR(cr3), rbp + 1, 0);
-    if (!pte1 || !pte2 || !(*pte1 & PTE_P) || !(*pte2 & PTE_P)) {
-      cprintf("<Unreadable memory\n");
-      return 1;
-    }
-    rip = rbp[1];
-    debuginfo_rip(rip, &info);
-    cprintf("  rbp %016lx  rip %016lx\n", (uint64_t)rbp, rip);
     
-    cprintf("         %.256s:%d: ", info.rip_file, info.rip_line);
-    cprintf("%.*s+%lu\n", info.rip_fn_namelen, info.rip_fn_name, rip - info.rip_fn_addr);
-    rbp = (uint64_t*)rbp[0];
-  }
-  
+  while (rbp != 0) {
+      buf = rbp;
+      
+      // counting how many digits rbp has in hexadecimal representation
+      digits_16 = 1;
+      buf = buf / 16;
+      while (buf != 0) {
+        digits_16++;
+        buf = buf / 16;
+      }
+      
+      cprintf("  rbp ");
+      
+      // first print additional zeroes
+      for (int i = 1; i <= 16 - digits_16; i++) {
+        cprintf("0");
+      }
+      cprintf("%lx", rbp);
+      
+      // get next rbp from stack
+      rbp = *pointer;
+      
+      // get rip from stack
+      pointer++;
+      rip = *pointer;
+      
+      // counting how many digits rip has in hexadecimal representation
+      buf = rip;
+      digits_16 = 1;
+      buf = buf / 16;
+      while (buf != 0) {
+        digits_16++;
+        buf = buf / 16;
+      }
+      
+      cprintf("  rip ");
+      
+      // first print additional zeroes
+      for (int i = 1; i <= 16 - digits_16; i++) {
+        cprintf("0");
+      }
+      cprintf("%lx\n", rip);
+      
+      // get and print debug info
+      code = debuginfo_rip((uintptr_t)rip, (struct Ripdebuginfo *)&info);
+      if (code == 0) {
+          cprintf("         %s:%d: %s+%lu\n", info.rip_file, info.rip_line, info.rip_fn_name, rip - info.rip_fn_addr);
+      } else {
+          cprintf("Info not found");
+      }
+      
+      pointer = (uintptr_t *)rbp;
+    }
+    
+  // LAB 2 code end
   return 0;
 }
 
-// LAB 5: Your code here.
+// LAB 5 code
 // Implement timer_start (mon_start), timer_stop (mon_stop), timer_freq (mon_frequency) commands.
-
-int mon_start(int argc, char **argv, struct Trapframe *tf) {
+int
+mon_start(int argc, char **argv, struct Trapframe *tf) {
+  // LAB 5 code
   if (argc != 2) {
     return 1;
   }
   timer_start(argv[1]);
+  // LAB 5 code end
+
   return 0;
 }
-int mon_stop(int argc, char **argv, struct Trapframe *tf) {
+
+int
+mon_stop(int argc, char **argv, struct Trapframe *tf) {
+  // LAB 5 code
   timer_stop();
+  // LAB 5 code end
+
   return 0;
 }
-int mon_frequency(int argc, char **argv, struct Trapframe *tf) {
+
+int
+mon_frequency(int argc, char **argv, struct Trapframe *tf) {
+  // LAB 5 code
   if (argc != 2) {
     return 1;
   }
   timer_cpu_frequency(argv[1]);
-  return 0;
-}
+  // LAB 5 code end
 
-int mon_pplist(int argc, char **argv, struct Trapframe *tf) {
-  unsigned char is_prev_allocated = page_is_allocated(&pages[0]) ? 1 : 0;
-  for (int i = 1; i <= npages; ++i) {
-    cprintf("%d", i);
-    if (i < npages && (page_is_allocated(&pages[i]) ? 1 : 0) == is_prev_allocated) {
-      while(i < npages && (page_is_allocated(&pages[i]) ? 1 : 0) == is_prev_allocated) {
-        is_prev_allocated = page_is_allocated(&pages[i]) ? 1 : 0;
-        ++i;
-      }
-      cprintf("..%d", i);
-    }
-    cprintf(is_prev_allocated ? " ALLOCATED\n" : " FREE\n");
-    is_prev_allocated = (is_prev_allocated + 1) % 2;
-  }
   return 0;
 }
+// LAB 5 code end
+
+// LAB 6 code
+// Implement memory (mon_memory) commands.
+int 
+mon_memory(int argc, char **argv, struct Trapframe *tf) {
+  size_t i;
+	int is_cur_free;
+
+	for (i = 1; i <= npages; i++) {
+    is_cur_free = !page_is_allocated(&pages[i - 1]);
+		cprintf("%lu", i);
+		if ((i < npages) && (page_is_allocated(&pages[i]) ^ is_cur_free)) {
+			while ((i < npages) && (page_is_allocated(&pages[i]) ^ is_cur_free)) {
+        i++;
+      }
+			cprintf("..%lu", i);
+		}
+		cprintf(is_cur_free ? " FREE\n" : " ALLOCATED\n");
+	}
+	
+  return 0;
+}
+// LAB 6 code end
 
 
 /***** Kernel monitor command interpreter *****/

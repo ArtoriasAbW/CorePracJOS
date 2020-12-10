@@ -8,6 +8,9 @@
 
 static void
 rtc_timer_init(void) {
+  // DELETED in LAB 5
+  // pic_init();
+  // DELETED in LAB 5 end
   pic_init();
   rtc_init();
 }
@@ -32,25 +35,39 @@ struct Timer timer_rtc = {
 
 void
 rtc_init(void) {
+  // запрет прерываний
   nmi_disable();
-  // LAB 4: Your code here
-  outb(IO_RTC_CMND, RTC_AREG); // переключаемся на A
-  uint8_t value = inb(IO_RTC_DATA); // читаем
-  outb(IO_RTC_CMND, RTC_AREG);
-  outb(IO_RTC_DATA, SET_NEW_RATE(value, RTC_500MS_RATE)); // 500ms частота
-  outb(IO_RTC_CMND, RTC_BREG); // переключаемся на B
-  value = inb(IO_RTC_DATA); // читаем значение
-  outb(IO_RTC_CMND, RTC_BREG); // переключаемся на B
-  outb(IO_RTC_DATA, value | RTC_PIE); // установливаем PIE bit
 
+  // LAB 4 code
+  uint8_t reg_a = 0, reg_b = 0;
+  
+  // меняем делитель частоты регистра часов А,
+  // чтобы прерывания приходили раз в полсекунды
+  outb(IO_RTC_CMND, RTC_AREG);
+  reg_a = inb(IO_RTC_DATA);
+  reg_a = reg_a | 0x0F; // биты 0-3 = 1 => 500 мс (2 Гц) 
+  outb(IO_RTC_DATA, reg_a);
+
+  // устанавливаем бит RTC_PIE в регистре часов В
+  outb(IO_RTC_CMND, RTC_BREG);
+  reg_b = inb(IO_RTC_DATA);
+  reg_b = reg_b | RTC_PIE; 
+  outb(IO_RTC_DATA, reg_b);
+
+  // разрешить прерывания
+  nmi_enable();
+  // LAB 4 code end
 }
 
 uint8_t
 rtc_check_status(void) {
   uint8_t status = 0;
-  // LAB 4: Your code here
-  outb(IO_RTC_CMND, RTC_CREG); // переключаемся на C
-  status = inb(IO_RTC_DATA); // читаем значение
+
+  // LAB 4 code
+  outb(IO_RTC_CMND, RTC_CREG);
+  status = inb(IO_RTC_DATA);
+  // LAB 4 code end
+
   return status;
 }
 

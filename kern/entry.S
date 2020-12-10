@@ -3,13 +3,16 @@
 #include <inc/mmu.h>
 #include <inc/memlayout.h>
 
-
 .code64
 .text
 
 .globl entry
 entry:
+  # LAB 4 code
+  # маскирование прерываний
   cli
+  # LAB 4 code end
+
   # Save LoadParams in uefi_lp.
   movq %rcx, uefi_lp(%rip)
 
@@ -40,7 +43,7 @@ _generall_syscall:
   movq %rbp, rbp_reg(%rip)
   movq %rsp, rsp_reg(%rip)
   movq $0x0,%rbp
-  leaq bootstacktop(%rip),%rsp // адрес bootstacktop в rip
+  leaq bootstacktop(%rip),%rsp
   pushq $GD_KD
   pushq rsp_reg(%rip)
   pushfq
@@ -78,15 +81,22 @@ sys_yield:
   call csys_yield
   jmp .
 
-# LAB 3: Your code here.
 .globl sys_exit
 .type  sys_exit, @function
 sys_exit:
+
+  # LAB 4 code
+  # маскирование прерываний
   cli
-  leaq bootstacktop(%rip),%rsp  
-  xor %ebp, %ebp 
+  # LAB 4 code end
+
+  # LAB 3 code
+  leaq bootstacktop(%rip),%rsp
+  xor %ebp, %ebp
   call csys_exit
-jmp .
+  # LAB 3 code end
+  
+  jmp .
 #endif
 
 .data

@@ -16,11 +16,18 @@ int mon_help(int argc, char **argv, struct Trapframe *tf);
 int mon_kerninfo(int argc, char **argv, struct Trapframe *tf);
 int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
 int mon_hello(int argc, char **argv, struct Trapframe *tf);
-int mon_name(int argc, char **argv, struct Trapframe *tf);
+
+// LAB 2 code
+// int mon_mycommand(int argc, char **argv, struct Trapframe *tf);
+// LAB 2 code end
+
 int mon_start(int argc, char **argv, struct Trapframe *tf);
 int mon_stop(int argc, char **argv, struct Trapframe *tf);
 int mon_frequency(int argc, char **argv, struct Trapframe *tf);
-int mon_pplist(int argc, char **argv, struct Trapframe *tf);
+int mon_memory(int argc, char **argv, struct Trapframe *tf);
 
+// LAB 6 code
+int mon_memory(int argc, char **argv, struct Trapframe *tf);
+// LAB 6 code end
 
 #endif // !JOS_KERN_MONITOR_H

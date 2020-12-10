@@ -17,6 +17,7 @@
 #include <kern/cpu.h>
 #include <kern/picirq.h>
 #include <kern/kclock.h>
+#include <kern/kdebug.h>
 
 void
 timers_init(void) {
@@ -98,6 +99,7 @@ early_boot_pml4_init(void) {
 #ifdef SANITIZE_SHADOW_BASE
   map_addr_early_boot(SANITIZE_SHADOW_BASE, SANITIZE_SHADOW_BASE - KERNBASE, SANITIZE_SHADOW_SIZE);
 #endif
+
 #if LAB <= 6
   map_addr_early_boot(FBUFFBASE, uefi_lp->FrameBufferBase, uefi_lp->FrameBufferSize);
 #endif
@@ -106,6 +108,7 @@ early_boot_pml4_init(void) {
 void
 i386_init(void) {
   extern char end[];
+
   early_boot_pml4_init();
 
   // Initialize the console.
@@ -131,8 +134,12 @@ i386_init(void) {
     (*ctor)();
     ctor++;
   }
-  pic_init();
-  rtc_init();
+
+  // LAB 5 code
+  // pic_init();
+  // rtc_init();
+  // LAB 5 code end
+
 #ifdef SANITIZE_SHADOW_BASE
   kasan_mem_init();
 #endif
@@ -149,7 +156,18 @@ i386_init(void) {
 
   // choose the timer used for scheduling: hpet or pit
   timers_schedule("hpet0");
+
   clock_idt_init();
+
+  // DELETED in LAB 5
+  // LAB 4 code
+  // pic_init();
+  // rtc_init();
+
+  // размаскирование на контроллере линии IRQ_CLOCK, по которой приходят прерывания от часов
+  // irq_setmask_8259A(~(~irq_mask_8259A | (1 << IRQ_CLOCK)));
+  // LAB 4 code end
+  // DELETED in LAB 5 end
 
 #ifdef CONFIG_KSPACE
   // Touch all you want.
@@ -165,12 +183,11 @@ i386_init(void) {
   ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
   // Touch all you want.
-  ENV_CREATE(user_hello, ENV_TYPE_USER);
+  // ENV_CREATE(user_hello, ENV_TYPE_USER);
+  // ENV_CREATE(user_dumbfork, ENV_TYPE_USER);
 #endif // TEST*
 #endif
-
   // Schedule and run the first user environment!
-
   sched_yield();
 }
 

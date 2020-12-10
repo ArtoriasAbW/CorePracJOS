@@ -151,6 +151,7 @@ CFLAGS += -Wall -Wformat=2 -Wno-unused-function -Wno-address-of-packed-member -W
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 CFLAGS += -DUPAGES_SIZE=$(UPAGES_SIZE)  -DFBUFF_SIZE=$(FBUFF_SIZE)
 CFLAGS += $(EXTRA_CFLAGS)
+CFLAGS += -mno-sse -mno-sse2 -mno-mmx
 
 
 KERN_SAN_CFLAGS :=
@@ -165,7 +166,7 @@ CFLAGS += -DSAN_ENABLE_KASAN=1
 # SANITIZE_SHADOW_SIZE of 32 MB allows 256 MB of addressible memory (due to byte granularity).
 KERN_SAN_CFLAGS := -fsanitize=address -fsanitize-blacklist=llvm/blacklist.txt \
 	-DSANITIZE_SHADOW_OFF=0x7077d40000 -DSANITIZE_SHADOW_BASE=0x8080000000 \
-	-DSANITIZE_SHADOW_SIZE=0x8000000 -mllvm -asan-mapping-offset=0x7077d40000
+	-DSANITIZE_SHADOW_SIZE=0x10000000 -mllvm -asan-mapping-offset=0x7077d40000
 
 KERN_SAN_LDFLAGS := --wrap memcpy  \
 	--wrap memset  \
@@ -208,11 +209,11 @@ CFLAGS += -DSAN_ENABLE_UASAN=1
 # SANITIZE_SHADOW_SIZE 32 MB allows 256 MB of addressible memory (due to byte granularity).
 # Extra page (+0x1000 to offset) avoids an optimisation via 'or' that assumes that unsigned wrap-around is impossible.
 USER_SAN_CFLAGS := -fsanitize=address -fsanitize-blacklist=llvm/ublacklist.txt \
-	-DSANITIZE_USER_SHADOW_OFF=0x21000000 -DSANITIZE_USER_SHADOW_BASE=0x21000000 \
-	-DSANITIZE_USER_SHADOW_SIZE=0x3000000 -mllvm -asan-mapping-offset=0x21000000
+	-DSANITIZE_USER_SHADOW_OFF=0x101000000 -DSANITIZE_USER_SHADOW_BASE=0x101000000 \
+	-DSANITIZE_USER_SHADOW_SIZE=0x8000000 -mllvm -asan-mapping-offset=0x101000000
 # To let the kernel map the first environment we additionally expose the variables to it.
-KERN_SAN_CFLAGS += -DSANITIZE_USER_SHADOW_OFF=0x21000000 \
-	-DSANITIZE_USER_SHADOW_BASE=0x21000000 -DSANITIZE_USER_SHADOW_SIZE=0x3000000
+KERN_SAN_CFLAGS += -DSANITIZE_USER_SHADOW_OFF=0x101000000 \
+	-DSANITIZE_USER_SHADOW_BASE=0x101000000 -DSANITIZE_USER_SHADOW_SIZE=0x8000000
 USER_SAN_LDFLAGS := --wrap memcpy  \
 	--wrap memset  \
 	--wrap memmove \
@@ -253,10 +254,10 @@ CFLAGS += -DGRADE3_PFX2=$(GRADE3_PFX2)
 endif
 
 # Common linker flags
-LDFLAGS := -m elf_x86_64 -z max-page-size=0x1000 --print-gc-sections
+LDFLAGS := -m elf_x86_64 -z max-page-size=0x1000 --print-gc-sections --warn-common
 
 # Linker flags for JOS programs
-ULDFLAGS := -T user/user.ld
+ULDFLAGS := -T user/user.ld --warn-common
 
 # Lists that the */Makefrag makefile fragments will add to
 OBJDIRS :=

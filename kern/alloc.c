@@ -5,13 +5,11 @@
 
 #define SPACE_SIZE 5 * 0x1000
 
-static uint8_t space[SPACE_SIZE]; // кусок под динамическую память??
+static uint8_t space[SPACE_SIZE];
 static Header base = {.s = {.next = (Header *)space, .prev = (Header *)space, .size = 0}}; /* empty list to get started */
 
 static Header *freep = NULL; /* start of free list */
 
-
-// проверяем правильность построенного списка(есть двусвязность) note: список закольцованный еще
 static void
 check_list(void) {
   Header *p, *prevp;
@@ -31,18 +29,18 @@ check_list(void) {
 /* malloc: general-purpose storage allocator */
 void *
 test_alloc(uint8_t nbytes) {
+
   Header *p;
   unsigned nunits;
 
   // Make allocator thread-safe with the help of spin_lock/spin_unlock.
-  // LAB 5: Your code here.
-
-  spin_lock(&kernel_lock); 
+  // LAB 5 code
+  spin_lock(&kernel_lock);
   // LAB 5 code end
 
-  nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1; // 
+  nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 
-  if (freep == NULL) { /* no free list yet */ 
+  if (freep == NULL) { /* no free list yet */
     ((Header *)&space)->s.next = (Header *)&base;
     ((Header *)&space)->s.prev = (Header *)&base;
     ((Header *)&space)->s.size = (SPACE_SIZE - sizeof(Header)) / sizeof(Header);
@@ -55,7 +53,7 @@ test_alloc(uint8_t nbytes) {
     if (p->s.size >= nunits) { /* big enough */
       freep = p->s.prev;
       if (p->s.size == nunits) { /* exactly */
-        (p->s.prev)->s.next = p->s.next; // здесь мы нашли точно подходящий по размеру блок(убираем его из списка свободных)
+        (p->s.prev)->s.next = p->s.next;
         (p->s.next)->s.prev = p->s.prev;
       } else { /* allocate tail end */
         p->s.size -= nunits;
@@ -66,6 +64,11 @@ test_alloc(uint8_t nbytes) {
       return (void *)(p + 1);
     }
     if (p == freep) { /* wrapped around free list */
+
+      // LAB 5 code
+      spin_unlock(&kernel_lock);
+      // LAB 5 code end
+
       return NULL;
     }
   }
@@ -78,8 +81,9 @@ test_free(void *ap) {
   bp = (Header *)ap - 1; /* point to block header */
 
   // Make allocator thread-safe with the help of spin_lock/spin_unlock.
-  // LAB 5: Your code here.
+  // LAB 5 code
   spin_lock(&kernel_lock);
+  // LAB 5 code end
 
   for (p = freep; !(bp > p && bp < p->s.next); p = p->s.next)
     if (p >= p->s.next && (bp > p || bp < p->s.next))
@@ -105,5 +109,8 @@ test_free(void *ap) {
   freep = p;
 
   check_list();
+
+  // LAB 5 code
   spin_unlock(&kernel_lock);
+  // LAB 5 code end
 }

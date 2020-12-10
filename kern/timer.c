@@ -90,6 +90,8 @@ acpi_enable(void) {
   }
 }
 
+
+// Obtain RSDP ACPI table address from bootloader.
 RSDP *
 get_rsdp(void) {
   static void *krsdp = NULL;
@@ -101,7 +103,7 @@ get_rsdp(void) {
   return krsdp;
 }
 
-
+// LAB 5 code
 static void *
 acpi_find_table(const char *sign) {
   static RSDT *krsdt;
@@ -178,28 +180,38 @@ acpi_find_table(const char *sign) {
 
   return NULL;
 }
+
 // LAB 5 code end
 
-// LAB 5: Your code here.
+// LAB 5: your code here
 // Obtain and map FADT ACPI table address.
 FADT *
 get_fadt(void) {
+  // LAB 5 code
   static FADT *kfadt;
+
   if (!kfadt) {
     kfadt = acpi_find_table("FACP");
   }
+
   return kfadt;
+  // LAB 5 code end
+
+  // return NULL;
 }
 
 // LAB 5: Your code here.
 // Obtain and map RSDP ACPI table address.
 HPET *
 get_hpet(void) {
+  // LAB 5 code
   static HPET *khpet;
   if (!khpet) {
     khpet = acpi_find_table("HPET");
   }
   return khpet;
+  // LAB 5 code end
+  return NULL;
 }
 
 // Getting physical HPET timer address from its table.
@@ -325,11 +337,17 @@ hpet_enable_interrupts_tim1(void) {
 
 void
 hpet_handle_interrupts_tim0(void) {
+  // LAB 5 code
+
+  // LAB 5 code end
   pic_send_eoi(IRQ_TIMER);
 }
 
 void
 hpet_handle_interrupts_tim1(void) {
+  // LAB 5 code
+
+  // LAB 5 code end
   pic_send_eoi(IRQ_CLOCK);
 }
 

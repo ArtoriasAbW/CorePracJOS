@@ -12,7 +12,7 @@ struct Env;
 
 extern char bootstacktop[], bootstack[];
 
-extern struct PageInfo *pages; // структура для отслеживания того какие страницы физической памяти свободны(связный список физических страниц)
+extern struct PageInfo *pages;
 extern size_t npages;
 
 extern pde_t *kern_pml4e;
@@ -73,9 +73,8 @@ int page_is_allocated(const struct PageInfo *pp);
 void tlb_invalidate(pml4e_t *pml4e, void *va);
 
 void *mmio_map_region(physaddr_t pa, size_t size);
-
-
 void *mmio_remap_last_region(physaddr_t pa, void *addr, size_t oldsize, size_t newsize);
+
 int user_mem_check(struct Env *env, const void *va, size_t len, int perm);
 void user_mem_assert(struct Env *env, const void *va, size_t len, int perm);
 

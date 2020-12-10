@@ -27,7 +27,7 @@ get_caller_pcs(uint64_t pcs[]) {
   for (i = 0; i < 10; i++) {
     if (rbp == 0 || rbp < (uint64_t *)ULIM)
       break;
-    pcs[i] = rbp[1];             // saved %rip
+    pcs[i] = rbp[1];             // saved %eip
     rbp    = (uint64_t *)rbp[0]; // saved %rbp
   }
   for (; i < 10; i++)
