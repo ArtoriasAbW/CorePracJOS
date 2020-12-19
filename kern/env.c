@@ -527,12 +527,16 @@ load_icode(struct Env *e, uint8_t *binary) {
 void
 env_create(uint8_t *binary, enum EnvType type){
   // LAB 3: Your code here.
-
   struct Env *newenv; 
   if (env_alloc(&newenv, 0) != 0) {
     panic("Can't allocate new environment");  // попытка выделить среду – если нет – вылет по панике ядра
   }
   
+  // LAB 10 code
+  if (type == ENV_TYPE_FS) {
+    newenv->env_tf.tf_rflags |= FL_IOPL_3;
+  }
+  // LAB 10 code end
   newenv->env_type = type;
   newenv->binary = binary;
 

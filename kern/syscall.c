@@ -259,7 +259,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
     return -E_INVAL;
   }
 
-  if (page_insert(envdst->env_pml4e, pi, dstva, perm | PTE_U) < 0) {
+  if (page_insert(envdst->env_pml4e, pi, dstva, perm | PTE_U)) {
     return -E_NO_MEM;
   }
   
@@ -345,9 +345,9 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm) {
 		if (PGOFF(srcva)) {
 			return -E_INVAL;
 		}
-		if ((perm & ~(PTE_U | PTE_P)) || (perm & ~PTE_SYSCALL)) {
-			return -E_INVAL;
-		}
+    if ((perm & ~(PTE_AVAIL | PTE_W)) != (PTE_U | PTE_P)) {
+      return -E_INVAL;
+    }
 		if (!(p = page_lookup(curenv->env_pml4e, srcva, &ptep))) {
 			return -E_INVAL;
 		}
@@ -357,8 +357,8 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm) {
 		if (page_insert(e->env_pml4e, p, e->env_ipc_dstva, perm)) {
 			return -E_NO_MEM;
 		}
-	}
-	else {
+    e->env_ipc_perm = perm;
+	} else {
 		e->env_ipc_perm = 0;
 	}
 	e->env_ipc_recving = 0;
