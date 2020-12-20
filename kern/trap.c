@@ -245,7 +245,10 @@ trap_dispatch(struct Trapframe *tf) {
     sched_yield();
     return;
   }
-  
+
+  // Handle keyboard and serial interrupts.
+  // LAB 11: Your code here.
+
   print_trapframe(tf);
 
   if (!(tf->tf_cs & 0x3)) {

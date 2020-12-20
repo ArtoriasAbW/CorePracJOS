@@ -8,9 +8,36 @@ FSOFILES := 		$(OBJDIR)/fs/ide.o \
 			$(OBJDIR)/fs/test.o \
 
 FSIMGTXTFILES :=	fs/newmotd \
+<<<<<<< HEAD
 			fs/motd
 
 FSIMGFILES := $(FSIMGTXTFILES)
+=======
+			fs/motd \
+			fs/lorem \
+			fs/script \
+			fs/testshell.key \
+			fs/testshell.sh
+
+USERAPPS :=		$(OBJDIR)/user/init \
+			$(OBJDIR)/user/cat \
+			$(OBJDIR)/user/echo \
+			$(OBJDIR)/user/ls \
+			$(OBJDIR)/user/lsfd \
+			$(OBJDIR)/user/num \
+			$(OBJDIR)/user/forktree \
+			$(OBJDIR)/user/primes \
+			$(OBJDIR)/user/primespipe \
+			$(OBJDIR)/user/sh \
+			$(OBJDIR)/user/testfdsharing \
+			$(OBJDIR)/user/testkbd \
+			$(OBJDIR)/user/testpipe \
+			$(OBJDIR)/user/testpteshare \
+			$(OBJDIR)/user/testshell \
+			$(OBJDIR)/user/hello
+
+FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS)
+>>>>>>> lab11
 
 $(OBJDIR)/fs/%.o: fs/%.c fs/fs.h inc/lib.h $(OBJDIR)/.vars.USER_CFLAGS
 	@echo + cc[USER] $<

@@ -48,6 +48,7 @@ bc_pgfault(struct UTrapframe *utf) {
   // the disk.
   //
   // LAB 10: Your code here.
+<<<<<<< HEAD
   addr = ROUNDDOWN(addr, PGSIZE);
   int return_code;
   if ((return_code = sys_page_alloc(0, addr, PTE_W)) < 0) {
@@ -65,6 +66,8 @@ bc_pgfault(struct UTrapframe *utf) {
   if (bitmap && block_is_free(blockno)) {
     panic("reading free block %08x\n", blockno);
   }
+=======
+>>>>>>> lab11
 }
 
 // Flush the contents of the block containing VA out to disk if
@@ -84,6 +87,7 @@ flush_block(void *addr) {
     panic("reading non-existent block %08x out of %08x\n", blockno, super->s_nblocks);
 
   // LAB 10: Your code here.
+<<<<<<< HEAD
   addr = ROUNDDOWN(addr, PGSIZE);
   if (!va_is_mapped(addr) || !va_is_dirty(addr)) {
     return;
@@ -95,6 +99,8 @@ flush_block(void *addr) {
   if ((return_code = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) < 0) {
     panic("flush_block: sys_page_map: %i", return_code);
   }
+=======
+>>>>>>> lab11
 }
 
 // Test that the block cache works, by smashing the superblock and
