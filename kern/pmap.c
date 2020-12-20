@@ -749,13 +749,18 @@ page_lookup(pml4e_t *pml4e, void *va, pte_t **pte_store) {
 void
 page_remove(pml4e_t *pml4e, void *va) {
   // LAB 7: Fill this function in
-  pte_t *ptep;
-  struct PageInfo *pi = page_lookup(pml4e, va, &ptep);
-  if (pi) {
-    page_decref(pi);
-    *ptep = 0;
-    tlb_invalidate(pml4e, va);
+  pte_t *ent = pml4e_walk(pml4e, va, 0);
+
+  if (!ent) {
+    return;
   }
+
+  if (PTE_ADDR(*ent)) {
+    page_decref(pa2page(PTE_ADDR(*ent)));
+  }
+  *ent = 0;
+
+  tlb_invalidate(pml4e, va);
 }
 
 //

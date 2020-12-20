@@ -74,10 +74,14 @@ pgfault(struct UTrapframe *utf) {
 static int
 duppage(envid_t envid, uintptr_t pn) {
   // LAB 9: Your code here.
-   pte_t ent = uvpt[pn] & PTE_SYSCALL;
+  pte_t ent = uvpt[pn] & PTE_SYSCALL;
   int r;
   envid_t id = sys_getenvid();
-
+  if (uvpt[pn] & PTE_SHARE) {
+    if ((r = sys_page_map(0, (void *)(pn * PGSIZE), envid, (void *)(pn * PGSIZE), ent))) {
+      panic("duppage error: sys_page_map PTE_SHARE");
+    }
+  }
   if (ent & (PTE_W | PTE_COW)) {
     ent = (ent | PTE_COW) & ~PTE_W;
     r = sys_page_map(id, (void *)(pn * PGSIZE), envid, (void *)(pn * PGSIZE), ent);

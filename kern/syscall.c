@@ -393,6 +393,26 @@ sys_ipc_recv(void *dstva) {
 	return 0;
 }
 
+static int
+sys_env_set_trapframe(envid_t envid, struct Trapframe *tf) {
+  struct Env *env;
+  int res = envid2env(envid, &env, 1);
+  if (res < 0) {
+    return res;
+  }
+  user_mem_assert(curenv, tf, sizeof(*tf), 0);
+
+  env->env_tf = *tf;
+  env->env_tf = *tf;
+  env->env_tf.tf_cs = GD_UT | 3;
+  env->env_tf.tf_ds = GD_UD | 3;
+  env->env_tf.tf_es = GD_UD | 3;
+  env->env_tf.tf_ss = GD_UD | 3;
+  env->env_tf.tf_rflags &= 0xFFF;
+  env->env_tf.tf_rflags |= FL_IF;
+  return 0;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 uintptr_t
 syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t a4, uintptr_t a5) {
@@ -428,6 +448,8 @@ syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t
     return sys_ipc_try_send((envid_t)a1, (uint32_t)a2, (void *)a3, (unsigned int)a4);
   } else if (syscallno == SYS_ipc_recv) {
     return sys_ipc_recv((void *)a1);
+  } else if (syscallno == SYS_env_set_trapframe) {
+    return sys_env_set_trapframe((envid_t)a1, (struct Trapframe *) a2);
   } else {
     return -E_INVAL;
   }

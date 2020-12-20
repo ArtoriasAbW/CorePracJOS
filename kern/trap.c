@@ -230,16 +230,6 @@ trap_dispatch(struct Trapframe *tf) {
   // All timers are actually routed through this IRQ.
   if (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK) {
 
-    // LAB 4 code
-    // было изначально
-    // rtc_check_status();
-    // pic_send_eoi(IRQ_CLOCK);
-
-    // читаем регистр статуса RTC и отправляем сигнал EOI на контроллер прерываний, 
-    // сигнализируя об окончании обработки прерывания
-    // pic_send_eoi(rtc_check_status());
-    // LAB 4 code end
-
     timer_for_schedule->handle_interrupts();
 
     sched_yield();
@@ -248,6 +238,19 @@ trap_dispatch(struct Trapframe *tf) {
 
   // Handle keyboard and serial interrupts.
   // LAB 11: Your code here.
+  if (tf->tf_trapno == IRQ_OFFSET + IRQ_KBD) {
+    kbd_intr();
+    pic_send_eoi(IRQ_KBD);
+    sched_yield();
+    return;
+  }
+  if (tf->tf_trapno == IRQ_OFFSET + IRQ_SERIAL) {
+    serial_intr();
+    pic_send_eoi(IRQ_SERIAL);
+    sched_yield();
+    return;
+  }
+
 
   print_trapframe(tf);
 

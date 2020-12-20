@@ -8,11 +8,6 @@ FSOFILES := 		$(OBJDIR)/fs/ide.o \
 			$(OBJDIR)/fs/test.o \
 
 FSIMGTXTFILES :=	fs/newmotd \
-<<<<<<< HEAD
-			fs/motd
-
-FSIMGFILES := $(FSIMGTXTFILES)
-=======
 			fs/motd \
 			fs/lorem \
 			fs/script \
@@ -37,7 +32,6 @@ USERAPPS :=		$(OBJDIR)/user/init \
 			$(OBJDIR)/user/hello
 
 FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS)
->>>>>>> lab11
 
 $(OBJDIR)/fs/%.o: fs/%.c fs/fs.h inc/lib.h $(OBJDIR)/.vars.USER_CFLAGS
 	@echo + cc[USER] $<
