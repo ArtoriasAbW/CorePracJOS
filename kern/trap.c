@@ -87,6 +87,9 @@ trap_init(void) {
     
   extern void (*syscall_thdlr)(void);
 
+  extern void (*kbd_thdlr)(void);
+  extern void (*serial_thdlr)(void);
+
 	SETGATE(idt[T_DIVIDE], 0, GD_KT, (uint64_t) &divide_thdlr, 0);
 	SETGATE(idt[T_DEBUG], 0, GD_KT, (uint64_t) &debug_thdlr, 0);
 	SETGATE(idt[T_NMI], 0, GD_KT, (uint64_t) &nmi_thdlr, 0);
@@ -103,6 +106,8 @@ trap_init(void) {
 	SETGATE(idt[T_FPERR], 0, GD_KT, (uint64_t) &fperr_thdlr, 0);
     
   SETGATE(idt[T_SYSCALL], 0, GD_KT, (uint64_t) &syscall_thdlr, 3);
+  SETGATE(idt[IRQ_OFFSET + IRQ_KBD], 0, GD_KT, &kbd_thdlr, 3);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SERIAL], 0, GD_KT, &serial_thdlr, 3);
   // LAB 8 code
 
   // Per-CPU setup
@@ -224,6 +229,9 @@ trap_dispatch(struct Trapframe *tf) {
   //
   if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
     cprintf("Spurious interrupt on irq 7\n");
+    // LAB 11 code
+    pic_send_eoi(IRQ_SPURIOUS);
+    sched_yield();
     return;
   }
 

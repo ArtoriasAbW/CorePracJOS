@@ -337,5 +337,4 @@ copy_shared_pages(envid_t child) {
     }
   }
   return err;
-  return 0;
 }

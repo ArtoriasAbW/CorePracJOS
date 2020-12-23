@@ -41,7 +41,7 @@ pgfault(struct UTrapframe *utf) {
   //   Make sure you DO NOT use sanitized memcpy/memset routines when using UASAN.
 
   // LAB 9: Your code here.
-  if ((r = sys_page_alloc(0, (void *) PFTEMP, PTE_W)) < 0) {
+  if ((r = sys_page_alloc(0, (void *) PFTEMP, PTE_W | PTE_U | PTE_P)) < 0) {
 		panic("pgfault error: sys_page_alloc: %i\n", r);
   }
 
@@ -51,7 +51,7 @@ pgfault(struct UTrapframe *utf) {
 	memmove((void *) PFTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
 #endif
 
-	if ((r = sys_page_map(0, (void *) PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_W)) < 0) {
+	if ((r = sys_page_map(0, (void *) PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_W | PTE_U | PTE_P)) < 0) {
 	  panic("pgfault error: sys_page_map: %i\n", r);
 	}
 
@@ -81,8 +81,7 @@ duppage(envid_t envid, uintptr_t pn) {
     if ((r = sys_page_map(0, (void *)(pn * PGSIZE), envid, (void *)(pn * PGSIZE), ent))) {
       panic("duppage error: sys_page_map PTE_SHARE");
     }
-  }
-  if (ent & (PTE_W | PTE_COW)) {
+  } else if (ent & (PTE_W | PTE_COW)) {
     ent = (ent | PTE_COW) & ~PTE_W;
     r = sys_page_map(id, (void *)(pn * PGSIZE), envid, (void *)(pn * PGSIZE), ent);
 
