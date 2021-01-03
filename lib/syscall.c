@@ -113,3 +113,18 @@ int
 sys_gettime(void) {
   return syscall(SYS_gettime, 0, 0, 0, 0, 0, 0);
 }
+
+// Individual task code start:
+
+int
+sys_pkt_send(void *addr, size_t length) {
+  return syscall(SYS_pkt_send, 1, (uint64_t)addr, length, 0, 0, 0);
+}
+
+int
+sys_pkt_recv(void *addr, size_t *length)
+{
+	return syscall(SYS_pkt_recv, 1, (uint64_t)addr, (uint64_t)length, 0, 0, 0);
+}
+
+// Individual task code end

@@ -14,6 +14,8 @@
 
 #include <kern/kclock.h>
 
+
+
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
 // Destroys the environment on memory errors.
@@ -422,6 +424,8 @@ sys_gettime(void) {
   // LAB 12: Your code here.
   return gettime();
 }
+
+
 
 // Dispatches to the correct kernel function, passing the arguments.
 uintptr_t

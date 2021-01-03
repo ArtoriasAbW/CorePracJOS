@@ -69,6 +69,8 @@ int sys_ipc_try_send(envid_t to_env, uint64_t value, void *pg, int perm);
 int sys_ipc_recv(void *rcv_pg);
 int sys_gettime(void);
 
+int sys_pkt_send(void *addr, size_t length);
+int sys_pkt_recv(void *addr, size_t *length);
 int vsys_gettime(void);
 
 // This must be inlined.  Exercise for reader: why?

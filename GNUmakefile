@@ -313,14 +313,17 @@ QEMUOPTS += -m 8192M
 
 QEMUOPTS += $(shell if $(QEMU) -display none -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
 IMAGES = $(OVMF_FIRMWARE) $(JOS_LOADER) $(OBJDIR)/kern/kernel $(JOS_ESP)/EFI/BOOT/kernel $(JOS_ESP)/EFI/BOOT/$(JOS_BOOTER)
-ifeq ($(CONFIG_SNAPSHOT),y)
-	QEMUOPTS += -drive file=$(OBJDIR)/fs/fs.img,if=ide,snapshot=on
-else
-	QEMUOPTS += -drive file=$(OBJDIR)/fs/fs.img,if=ide
-endif
+# ifeq ($(CONFIG_SNAPSHOT),y)
+# 	QEMUOPTS += -drive file=$(OBJDIR)/fs/fs.img,if=ide,snapshot=on
+# else
+# 	QEMUOPTS += -drive file=$(OBJDIR)/fs/fs.img,if=ide
+# endif
 IMAGES += $(OBJDIR)/fs/fs.img
 QEMUOPTS += -bios $(OVMF_FIRMWARE)
 # QEMUOPTS += -debugcon file:$(UEFIDIR)/debug.log -global isa-debugcon.iobase=0x402
+
+# for SATA
+QEMUOPTS += -drive id=disk,file=$(OBJDIR)/fs/fs.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0 
 
 define POST_CHECKOUT
 #!/bin/sh -x

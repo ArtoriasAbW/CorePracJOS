@@ -19,6 +19,8 @@
 #include <kern/kclock.h>
 #include <kern/kdebug.h>
 
+#include <kern/pci.h>
+
 void
 timers_init(void) {
   timertab[0] = timer_rtc;
@@ -159,15 +161,8 @@ i386_init(void) {
 
   clock_idt_init();
 
-  // DELETED in LAB 5
-  // LAB 4 code
-  // pic_init();
-  // rtc_init();
+  pci_init();
 
-  // размаскирование на контроллере линии IRQ_CLOCK, по которой приходят прерывания от часов
-  // irq_setmask_8259A(~(~irq_mask_8259A | (1 << IRQ_CLOCK)));
-  // LAB 4 code end
-  // DELETED in LAB 5 end
 
 #ifdef CONFIG_KSPACE
   // Touch all you want.

@@ -14,4 +14,8 @@ union header { /* block header */
 
 typedef union header Header;
 
+// for IndTask
+void *
+test_alloc(uint8_t nbytes);
+
 #endif

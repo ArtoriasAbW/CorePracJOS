@@ -18,6 +18,8 @@ enum {
   SYS_ipc_try_send,
   SYS_ipc_recv,
   SYS_gettime,
+  SYS_pkt_send,
+  SYS_pkt_recv,
   NSYSCALLS
 };
 

@@ -5,7 +5,7 @@
 
 void
 umain(int argc, char **argv) {
-  char time[20];
+  char time[20]; 
   int now = vsys_gettime();
   struct tm tnow;
 
