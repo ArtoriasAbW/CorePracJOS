@@ -1,11 +1,6 @@
 
 #include "ata.h"
 #include "ata_commands.h"
-// #include <kernel/interrupts/irqs.h>
-// #include <driver/storage/storage.h>
-// #include <driver/pci.h>
-
-// #include <driver/storage/gpt.h>
 
 ata_channel_t *isaPrimary;
 ata_channel_t *isaSecondary;
@@ -81,7 +76,6 @@ int16_t ata_wait_for_irq(ata_channel_t *channel, bool master) {
 		if(!timeout)
 			break;
 		timeout--;
-		sleep(10);
 	}
 
 	// Did we hit the IRQ?
@@ -163,9 +157,7 @@ void ata_select_device(ata_channel_t *channel, bool master) {
 void ata_soft_reset(ata_channel_t *channel, bool *outMasterPresent, bool *outMasterAtapi, bool *outSlavePresent, bool *outSlaveAtapi) {
     // Cycle reset bit.
     outb(ATA_REG_DEVICE_CONTROL(channel->ControlPort), ATA_DEVICE_CONTROL_RESET);
-    sleep(10);
     outb(ATA_REG_DEVICE_CONTROL(channel->ControlPort), 0x00);
-    sleep(500);
 
     // Select master device.
     ata_select_device(channel, true);
@@ -231,7 +223,6 @@ void ata_soft_reset(ata_channel_t *channel, bool *outMasterPresent, bool *outMas
 bool ata_wait_for_drq(ata_channel_t *channel) {
     uint16_t timeout = 500;
     uint8_t response = inb(ATA_REG_ALT_STATUS(channel->ControlPort));
-    sleep(1);
 
     // Is the drive busy?
     while ((response & ATA_STATUS_BUSY) || ((response & ATA_STATUS_DATA_REQUEST) == 0)) {
@@ -242,7 +233,6 @@ bool ata_wait_for_drq(ata_channel_t *channel) {
 
         // Decrement timeout period and try again.
         timeout--;
-        sleep(10);
         response = inb(ATA_REG_ALT_STATUS(channel->ControlPort));
     }
 

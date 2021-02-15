@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "*.def": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "new": "c",
+        "*.tcc": "c",
+        "cstdlib": "c",
+        "memory": "c"
     }
 }

@@ -47,7 +47,7 @@ test_alloc(uint8_t nbytes) {
     freep                      = &base;
   }
 
-  check_list();
+  // check_list();
 
   for (p = freep->s.next;; p = p->s.next) {
     if (p->s.size >= nunits) { /* big enough */

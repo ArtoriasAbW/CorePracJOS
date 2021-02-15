@@ -1,15 +1,12 @@
 #include "kern/ahci.h"
 #include "kern/alloc.h"
 #include "inc/string.h"
-// #include <kernel/interrupts/irqs.h>
-// #include <driver/storage/storage.h>
 #include <kern/pmap.h>
 #include <kern/pci.h>
 #include <kern/ata.h>
 #include <kern/ata_commands.h>
 #include <kern/pcireg.h>
 #include <kern/alloc.h>
-// for sleep
 #include <kern/syscall.h>
 
 #define MASK_PAGE_4K(size)          ((uint64_t)(size) & 0xFFFFFFFFFFFFF000)     // Get only the page address.
@@ -17,20 +14,9 @@
 #define PCI_INTERFACE_MASS_STORAGE_SATA_VENDOR_AHCI 0x01
 #define PAGE_SIZE_4K                    0x1000
 
-
-void sleep(uint64_t ms) { // тут секунды
-    uint64_t now = syscall(SYS_gettime, 0, 0, 0, 0, 0);
-    uint64_t end = now + ms;
-    cprintf("time = %lu\n", now);
-    if (end < now) {
-        panic("end < now");
-    }
-    while ((now = syscall(SYS_gettime, 0, 0, 0, 0, 0)) < end) {
-    }
-}
-
 void *paging_device_alloc(uint64_t startPhys, uint64_t endPhys) {
-    return mmio_map_region(startPhys, endPhys - startPhys);
+    uint64_t size = (endPhys - startPhys) / PAGE_SIZE_4K + 1; //  количество страниц
+    return mmio_map_region(startPhys, size * PAGE_SIZE_4K); 
 }
 
 static void ahci_port_cmd_start(ahci_port_t *ahciPort) {
@@ -62,8 +48,7 @@ static void ahci_port_cmd_stop(ahci_port_t *ahciPort) {
             cprintf("AHCI: Timeout waiting for port %u to stop!\n", ahciPort->Number);
             break;
         }
-
-        sleep(1);
+    
         timeout--;
     }
 
@@ -78,6 +63,7 @@ static void ahci_port_init_memory(ahci_port_t *ahciPort) {
 
     // Stop port.
     ahci_port_cmd_stop(ahciPort);
+    // переконфигурируем пространство портов, добавляя адрес CommandList
 
     // Get physical addresses of command list.
     uint64_t commandListPhys = 0;
@@ -105,7 +91,6 @@ static bool ahci_port_reset(ahci_port_t *ahciPort) {
     // Enable reset bit for 10ms (as per 10.4.2 Port Reset).
     cprintf("AHCI: Resetting port %u...\n", ahciPort->Number);
     portMemory->SataControl.DeviceDetectionInitialization = AHCI_SATA_STATUS_DETECT_INIT_RESET;
-    sleep(10);
     portMemory->SataControl.DeviceDetectionInitialization = AHCI_SATA_STATUS_DETECT_INIT_NO_ACTION;
 
     // Wait for port to be ready.
@@ -117,7 +102,6 @@ static bool ahci_port_reset(ahci_port_t *ahciPort) {
             return false;
         }
 
-        sleep(1);
         timeout--;
     }
 
@@ -137,7 +121,6 @@ static bool ahci_port_reset(ahci_port_t *ahciPort) {
             return false;
         }
 
-        sleep(1);
         timeout--;
     }
     return true;
@@ -172,10 +155,6 @@ static bool ahci_take_ownership(struct ahci_controller_t *ahciController) {
     // Set OS ownership bit.
     ahciController->Memory->BiosHandoff.OsOwnedSemaphore = true;
 
-    // Wait 25ms and check if BIOS is still busy. If so, wait another 2 seconds.
-    sleep(25);
-    if (ahciController->Memory->BiosHandoff.BiosBusy)
-        sleep(2000);
 
     // Wait for BIOS to give up ownership.
     uint32_t timeout = 200;
@@ -186,7 +165,6 @@ static bool ahci_take_ownership(struct ahci_controller_t *ahciController) {
             return false;
         }
 
-        sleep(10);
         timeout--;
     }
 
@@ -196,12 +174,10 @@ static bool ahci_take_ownership(struct ahci_controller_t *ahciController) {
 }
 
 int ahci_init(struct pci_func *pciDevice) { 
-    // ICheck that the device is an AHCI controller, and that the BAR is correct.
+    // Check that the device is an AHCI controller, and that the BAR is correct.
     pci_func_enable(pciDevice);
-    // sleep(20);
-    if (!(PCI_CLASS(pciDevice->dev_class) == PCI_CLASS_MASS_STORAGE /* && PCI_SUBCLASS(pciDevice->dev_class) == PCI_SUBCLASS_MASS_STORAGE_SATA && pciDevice->Interface == PCI_INTERFACE_MASS_STORAGE_SATA_VENDOR_AHCI*/))
-        return 0;
-    // if (!(!pciDevice->BaseAddresses[5].PortMapped && pciDevice->BaseAddresses[5].BaseAddress != 0)) { // проверяем что адрес AHCI корректный
+    if (!(PCI_CLASS(pciDevice->dev_class) == PCI_CLASS_MASS_STORAGE && PCI_SUBCLASS(pciDevice->dev_class) == PCI_SUBCLASS_MASS_STORAGE_SATA /*&& pciDevice->Interface == PCI_INTERFACE_MASS_STORAGE_SATA_VENDOR_AHCI*/))
+        return 0; 
     if (!pciDevice->reg_base[5]) {
         cprintf("%ld\n", pciDevice->reg_size[5]);
         cprintf("AHCI: Invalid base address. Aborting!\n");
@@ -209,18 +185,18 @@ int ahci_init(struct pci_func *pciDevice) {
     }
 
     // Create controller object and map to memory.
-    cprintf("AHCI: Initializing controller at 0x%X...\n", pciDevice->BaseAddresses[5].BaseAddress);
-    // выделяем память и зануляем
+    cprintf("AHCI: Initializing controller at 0x%ld...\n", pciDevice->reg_base[5]);
     
     struct ahci_controller_t *ahciController = (struct ahci_controller_t*)(unsigned long long)test_alloc(sizeof(struct ahci_controller_t));
     memset(ahciController, 0, sizeof(struct ahci_controller_t));
 
 
-    ahciController->BaseAddress = pciDevice->BaseAddresses[5].BaseAddress;
+    ahciController->BaseAddress = pciDevice->reg_base[5];
     ahciController->Memory = (ahci_memory_t*)((uintptr_t)paging_device_alloc(MASK_PAGE_4K(ahciController->BaseAddress), MASK_PAGE_4K(ahciController->BaseAddress))
         + MASK_PAGEFLAGS_4K(ahciController->BaseAddress));
 
     cprintf("AHCI: Capabilities: 0x%X.\n", ahciController->Memory->Capabilities.RawValue);
+
     cprintf("AHCI: Current AHCI controller setting: %s.\n", ahciController->Memory->GlobalControl.AhciEnabled ? "on" : "off");
     if (ahciController->Memory->CapabilitiesExtended.Handoff)
         cprintf("AHCI: BIOS handoff required.\n");
@@ -240,7 +216,7 @@ int ahci_init(struct pci_func *pciDevice) {
     memset(ahciController->Ports, 0, sizeof(ahci_port_t*) * ahciController->PortCount);
 
     // Page to allocate command lists from.
-    // uint32_t commandListPage = pmm_pop_frame_nonlong();
+    // uint32_t commandListPage = page_alloc(ALLOC_ZERO);
     uint32_t commandListPage = 0;
     ahci_command_header_t *commandLists = (ahci_command_header_t*)(unsigned long long)paging_device_alloc(commandListPage, commandListPage); // mmio_map_region???
     memset(commandLists, 0, PAGE_SIZE_4K);
@@ -248,7 +224,7 @@ int ahci_init(struct pci_func *pciDevice) {
     const uint8_t maxCommandLists = PAGE_SIZE_4K / AHCI_COMMAND_LIST_SIZE; // 4 is the max that can be allocated from a 4KB page.
 
     // Page to allocated the recieved FIS structures from.
-    // uint32_t receivedFisPage = pmm_pop_frame_nonlong();
+    // uint32_t receivedFisPage = page_alloc(ALLOC_ZERO);
     uint32_t receivedFisPage = 0;
     ahci_received_fis_t *recievedFises = (ahci_received_fis_t*)(unsigned long long)paging_device_alloc(receivedFisPage, receivedFisPage);
     memset(recievedFises, 0, PAGE_SIZE_4K);
@@ -258,7 +234,7 @@ int ahci_init(struct pci_func *pciDevice) {
     // Detect and create ports.
     uint32_t enabledPorts = 0;
     for (uint8_t port = 0; port < ahciController->PortCount; port++) {
-        if (ahciController->Memory->PortsImplemented & (1 << port)) {
+        if (ahciController->Memory->PortsImplemented & (1 << port)) { // ahciController->Memory->PortsImplemented == 0 (почему?)
             // If no more command lists can be allocated, pop another page.
             if (commandListsAllocated == maxCommandLists) {
                 // commandListPage = pmm_pop_frame_nonlong();
@@ -296,9 +272,6 @@ int ahci_init(struct pci_func *pciDevice) {
 
     cprintf("AHCI: Version major 0x%X, minor 0x%X\n", ahciController->Memory->Version.Major, ahciController->Memory->Version.Minor);
     cprintf("AHCI: Total ports: %u (%u enabled)\n", ahciController->PortCount, enabledPorts);
-
-    // Software needs to wait at least 500 ms for ports to be idle, as per spec.
-    sleep(700);
 
     // Reset and probe ports.
     for (uint32_t port = 0; port < ahciController->PortCount; port++) {
@@ -338,6 +311,7 @@ int ahci_init(struct pci_func *pciDevice) {
     uint32_t cmdTable2Page = 0;
     ahci_command_table_t *cmdTable2 = (ahci_command_table_t*)(unsigned long long)paging_device_alloc(cmdTable2Page, cmdTable2Page);
     memset(cmdTable2, 0, PAGE_SIZE_4K);
+    
     // uint32_t ss = sizeof(ahci_received_fis_t);
     
     // uint32_t dataPage = pmm_pop_frame_nonlong();
@@ -352,15 +326,14 @@ int ahci_init(struct pci_func *pciDevice) {
 
     ata_identify_result_2_t* ata = (ata_identify_result_2_t*)dataPtr;
     // uint32_t fff = sizeof(ata_identify_result_2_t);
-
     ahci_port_cmd_stop(hddPort);
-   /* hddPort->CommandList[0].CommandTableBaseAddress = cmdTablePage;
+    hddPort->CommandList[0].CommandTableBaseAddress = cmdTablePage;
     hddPort->CommandList[0].CommandFisLength = 4;
     hddPort->CommandList[0].PhyRegionDescTableLength = 1;
     hddPort->CommandList[0].Reset = true;
     hddPort->CommandList[0].ClearBusyUponOk = true;
     cmdTable->PhysRegionDescTable[0].DataBaseAddress = dataPage;
-    cmdTable->PhysRegionDescTable[0].DataByteCount = 0x1000 - 1;*/
+    cmdTable->PhysRegionDescTable[0].DataByteCount = 0x1000 - 1;
     ahci_fis_reg_host_to_device_t *h2d = (ahci_fis_reg_host_to_device_t*)&cmdTable->CommandFis;
     h2d->FisType = 0x27;
     h2d->IsCommand = false;
@@ -382,7 +355,6 @@ int ahci_init(struct pci_func *pciDevice) {
 
     // Print info.
     cprintf("AHCI port ssts 0x%X\n", ahciController->Memory->Ports[0].SataStatus.RawValue);
-    cprintf("AHCI: status 0x%X, error 0x%X\n", ahciController->Memory->Ports[0].TaskFileData.Status.RawValue, ahciController->Memory->Ports[0].TaskFileData.Error);
     cprintf("AHCI: Version major 0x%X, minor 0x%X\n", ahciController->Memory->Version.Major, ahciController->Memory->Version.Minor);
     cprintf("AHCI: Total ports: %u (%u enabled)\n", ahciController->PortCount, enabledPorts);
 
@@ -418,7 +390,6 @@ int ahci_init(struct pci_func *pciDevice) {
            break;
         }
 
-        sleep(1000);
         cprintf("AHCI: status 0x%X, error 0x%X\n", ahciController->Memory->Ports[0].TaskFileData.Status.RawValue, ahciController->Memory->Ports[0].TaskFileData.Error);
         cprintf("AHCI: general: 0x%X\n", ata->GeneralConfig);
         cprintf("AHCI: int status 0x%X\n", ahciController->Memory->Ports[0].InterruptsStatus.RawValue);
@@ -433,7 +404,6 @@ int ahci_init(struct pci_func *pciDevice) {
 
     cprintf("AHCI: Model: %s\n", model);
     cprintf("AHCI: Integrity: 0x%X\n", ata->ChecksumValidityIndicator);
-    while(true);
 
-
+    return 1;
 }

@@ -10,7 +10,7 @@
 // docs https://wiki.osdev.org/PCI
 // Flag to do "lspci" at bootup
 static int pci_show_devs = 1;
-static int pci_show_addrs = 1;
+static int pci_show_addrs = 0;
 
 // PCI "configuration mechanism one"
 static uint64_t pci_conf1_addr_ioport = 0x0cf8;
@@ -49,7 +49,7 @@ pci_conf1_set_addr(uint64_t bus,
 		   uint64_t offset)
 {
 	assert(bus < 256);
-	assert(dev < 64);
+	assert(dev < 32);
 	assert(func < 8);
 	assert(offset < 256);
 	assert((offset & 0x3) == 0);
